@@ -8,6 +8,6 @@
          (indices 
           (loop for i below n
                 for val = (elt mask i)
-                when (and val (not (eq val :null))) 
+                when (not (is-missing-p val)) 
                 collect i)))
     (cl-tibble:slice data :rows indices)))

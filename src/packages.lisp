@@ -1,5 +1,5 @@
 (defpackage #:cl-dplyr
-  (:use #:cl)
+  (:use #:cl #:cl-vctrs-lite)
   (:import-from #:cl-tibble
                 #:tibble)
   (:export
@@ -31,4 +31,13 @@
    
    ;; DSL
    #:->
-   #:->>))
+   #:->>
+   
+   ;; NA handling
+   #:is-missing-p))
+
+(in-package #:cl-dplyr)
+
+(defun is-missing-p (x)
+  "Check if X is missing (nil or cl-vctrs-lite:*na*)."
+  (or (null x) (cl-vctrs-lite:na-p x)))

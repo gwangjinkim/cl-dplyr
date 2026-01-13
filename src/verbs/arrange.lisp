@@ -8,10 +8,22 @@
     (dolist (spec (reverse vars)) 
       (let* ((col-name (if (consp spec) (first spec) spec))
              (direction (if (consp spec) (second spec) :asc))
-             (col-data (cl-tibble:tbl-col df col-name))
-             ;; TODO: Generic comparison from cl-vctrs-lite
-             (predicate (if (eq direction :desc) #'> #'<)))
-        (setf indices (stable-sort indices predicate
+             (col-data (cl-tibble:tbl-col df col-name)))
+        (setf indices (stable-sort indices 
+                                   (lambda (a b)
+                                     (cond
+                                       ((is-missing-p a) nil)
+                                       ((is-missing-p b) t)
+                                       ((eq direction :desc)
+                                        (cond
+                                          ((and (numberp a) (numberp b)) (> a b))
+                                          ((and (stringp a) (stringp b)) (string> a b))
+                                          (t (string> (format nil "~a" a) (format nil "~a" b)))))
+                                       (t
+                                        (cond
+                                          ((and (numberp a) (numberp b)) (< a b))
+                                          ((and (stringp a) (stringp b)) (string< a b))
+                                          (t (string< (format nil "~a" a) (format nil "~a" b)))))))
                                    :key (lambda (i) (aref col-data i))))))
     indices))
 
