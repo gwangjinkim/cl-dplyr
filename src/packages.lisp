@@ -27,4 +27,7 @@
    #:right-join
    #:full-join
    #:semi-join
-   #:anti-join))
+   #:anti-join
+   
+   ;; DSL
+   #:chain))

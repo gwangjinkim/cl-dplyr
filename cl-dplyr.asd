@@ -24,7 +24,8 @@
                    (:file "group-by")
                    (:file "ungroup")
                    (:file "summarise")
-                   (:file "joins"))))))
+                   (:file "joins")
+                   (:file "dsl"))))))
   :in-order-to ((test-op (test-op "cl-dplyr/tests")))
   :description "A Grammar of Data Manipulation for Common Lisp")
 
@@ -38,5 +39,6 @@
                  (:file "agent2" :depends-on ("package" "main"))
                  (:file "agent3" :depends-on ("package" "main"))
                  (:file "agent4" :depends-on ("package" "main"))
-                 (:file "agent5" :depends-on ("package" "main")))))
+                 (:file "agent5" :depends-on ("package" "main"))
+                 (:file "agent6" :depends-on ("package" "main")))))
   :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))
