@@ -18,5 +18,7 @@
                    (:file "pull")
                    (:file "rename")
                    (:file "arrange")
-                   (:file "mutate"))))))
+                   (:file "mutate")
+                   (:file "filter")
+                   (:file "distinct"))))))
   :description "A Grammar of Data Manipulation for Common Lisp")
