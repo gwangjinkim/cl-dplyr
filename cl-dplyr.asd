@@ -21,4 +21,15 @@
                    (:file "mutate")
                    (:file "filter")
                    (:file "distinct"))))))
+  :in-order-to ((test-op (test-op "cl-dplyr/tests")))
   :description "A Grammar of Data Manipulation for Common Lisp")
+
+(defsystem "cl-dplyr/tests"
+  :depends-on ("cl-dplyr" "fiveam")
+  :components ((:module "tests"
+                :components
+                ((:file "package")
+                 (:file "main" :depends-on ("package"))
+                 (:file "agent1" :depends-on ("package" "main"))
+                 (:file "agent2" :depends-on ("package" "main")))))
+  :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))

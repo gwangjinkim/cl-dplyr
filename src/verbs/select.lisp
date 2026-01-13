@@ -1,6 +1,11 @@
 (in-package #:cl-dplyr)
 
-(defmethod select ((data tibble) &rest selection)
+(defmethod select ((data cl-tibble:tbl) &rest selection)
   "Select columns by name."
-  ;; Selection can be keywords equivalent to column names.
-  (cl-tibble:select-cols data selection))
+  ;; selection is list of column names (keywords)
+  (let ((cols (loop for name in selection
+                    collect (cl-tibble:tbl-col data name))))
+    (apply #'cl-tibble:tibble
+           (loop for name in selection
+                 for col in cols
+                 nconc (list name col)))))

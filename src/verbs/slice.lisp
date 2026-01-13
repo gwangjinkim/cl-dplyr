@@ -1,11 +1,11 @@
 (in-package #:cl-dplyr)
 
-(defmethod slice ((data tibble) &rest indices)
+(defmethod slice ((data cl-tibble:tbl) &rest indices)
   "Slice rows by index."
   ;; Assuming indices are 0-based integers
   ;; In dplyr slice takes generic arguments, often integers.
-  (let ((idx (if (and (length= 1 indices)
+  (let ((idx (if (and (= (length indices) 1)
                       (typep (first indices) 'sequence))
                  (first indices)
                  indices)))
-    (cl-tibble:slice-rows data idx)))
+    (cl-tibble:slice data :rows idx)))

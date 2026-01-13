@@ -1,5 +1,5 @@
 (in-package #:cl-dplyr)
 
-(defmethod pull ((data tibble) var)
+(defmethod pull ((data cl-tibble:tbl) var)
   "Extract a single column."
-  (cl-tibble:column data var))
+  (cl-tibble:tbl-col data var))

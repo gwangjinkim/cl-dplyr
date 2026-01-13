@@ -1,10 +1,19 @@
 (in-package #:cl-dplyr)
 
-(defmethod rename ((data tibble) &rest renaming)
-  "Rename columns. Arguments are typically new-name=old-name pairs, but here we expect (new-name old-name) pairs or keywords."
-  ;; renaming list of (new . old)
-  ;; To be robust, we need to handle how arguments are passed. 
-  ;; We'll assume a list of pairs for now: :new :old
-  (loop for (new old) on renaming by #'cddr
-        collect (cons new old) into pairs
-        finally (return (cl-tibble:rename-cols data pairs))))
+(defmethod rename ((data cl-tibble:tbl) &rest renaming)
+  "Rename columns."
+  (let* ((old-names (coerce (cl-tibble:tbl-names data) 'list))
+         (new-names (copy-list old-names))
+         (renaming-alist (loop for (new old) on renaming by #'cddr
+                               collect (cons old new))))
+    ;; Update names in place in the list
+    (loop for cell on new-names
+          for name = (car cell)
+          for entry = (assoc name renaming-alist :test #'string-equal)
+          when entry
+          do (setf (car cell) (cdr entry)))
+    
+    (apply #'cl-tibble:tibble
+           (loop for name in new-names
+                 for old-name in old-names
+                 nconc (list name (cl-tibble:tbl-col data old-name))))))
