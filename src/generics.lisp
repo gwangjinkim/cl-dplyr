@@ -1,26 +1,26 @@
 (in-package #:cl-dplyr)
 
-;;; Core Generics
+;;; Core Generics (Internal Functional Layer)
 
 (defgeneric slice (data &rest args)
   (:documentation "Subset rows using their positions."))
 
-(defgeneric filter (data predicate)
+(defgeneric %filter (data predicate)
   (:documentation "Subset rows using a predicate."))
 
-(defgeneric arrange (data &rest order-specs)
+(defgeneric %arrange (data &rest order-specs)
   (:documentation "Order rows by variables."))
 
-(defgeneric distinct (data &rest variables)
+(defgeneric %distinct (data &rest variables)
   (:documentation "Select distinct/unique rows."))
 
-(defgeneric select (data &rest selection)
+(defgeneric %select (data &rest selection)
   (:documentation "Select, rename, and reorder columns."))
 
-(defgeneric rename (data &rest renaming)
+(defgeneric %rename (data &rest renaming)
   (:documentation "Rename specific columns."))
 
-(defgeneric mutate (data &rest mutations)
+(defgeneric %mutate (data &rest mutations)
   (:documentation "Add or modify columns."))
 
 (defgeneric pull (data var)
@@ -32,11 +32,8 @@
 (defgeneric ungroup (data)
   (:documentation "Remove grouping metadata."))
 
-(defgeneric summarise (data &rest summaries)
+(defgeneric %summarise (data &rest summaries)
   (:documentation "Reduce groups to single values."))
-
-(defgeneric summarize (data &rest summaries)
-  (:documentation "Alias for summarise."))
 
 ;;; Joins
 

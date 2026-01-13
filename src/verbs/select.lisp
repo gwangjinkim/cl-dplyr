@@ -1,6 +1,6 @@
 (in-package #:cl-dplyr)
 
-(defmethod select ((data cl-tibble:tbl) &rest selection)
+(defmethod %select ((data cl-tibble:tbl) &rest selection)
   "Select columns by name."
   ;; selection is list of column names (keywords)
   (let ((cols (loop for name in selection
@@ -9,3 +9,6 @@
            (loop for name in selection
                  for col in cols
                  nconc (list name col)))))
+
+(defmacro select (df &rest selection)
+  `(%select ,df ,@(mapcar #'unquote-col selection)))

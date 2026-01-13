@@ -27,7 +27,14 @@
                                    :key (lambda (i) (aref col-data i))))))
     indices))
 
-(defmethod arrange ((data cl-tibble:tbl) &rest order-specs)
+(defmethod %arrange ((data cl-tibble:tbl) &rest order-specs)
   "Order rows by variables."
   (let ((indices (order-by data order-specs)))
     (cl-tibble:slice data :rows indices)))
+
+(defmacro arrange (df &rest order-specs)
+  `(%arrange ,df 
+             ,@(loop for spec in order-specs collect
+                     (if (and (consp spec) (member (first spec) '(desc :desc)))
+                         `'(,(unquote-col (second spec)) :desc)
+                         (unquote-col spec)))))

@@ -8,33 +8,55 @@
 - `summarise()` reduces multiple values down to a single summary.
 - `arrange()` changes the ordering of the rows.
 
-## For R Tidyverse Users: Quick Start
+## Quick Start
 
-If you are coming from R, `cl-dplyr` will feel very familiar. We use the same verb names and logic.
+`cl-dplyr` brings the elegance of the Tidyverse to Common Lisp.
 
-| R dplyr | cl-dplyr |
-|---------|----------|
-| `df %>% filter(x > 5)` | `(-> df (filter (lambda (d) (vec-p> (tbl-col d :x) 5))))` |
-| `df %>% mutate(z = x + y)` | `(mutate df :z (lambda (d) (vec-p+ (tbl-col d :x) (tbl-col d :y))))` |
-| `df %>% select(x, y)` | `(select df :x :y)` |
-| `df %>% arrange(desc(x))` | `(arrange df '(:x :desc))` |
-| `df %>% group_by(g) %>% summarise(m = mean(x))` | `(-> df (group-by :g) (summarise :m (lambda (d) (mean (tbl-col d :x)))))` |
+### The New DSL Notation
+We provide a powerful DSL that allows you to write R-like code directly in Lisp.
 
-**Key Differences:**
-- **Piping:** We use `->` or `->>` from the `cl-dplyr` package (re-exported from `arrow-macros` or similar logic).
-- **Lambdas:** Instead of unquoted expressions, we often use `lambda` for predicates and mutations to stay Lisp-idiomatic and performant.
-- **Keywords:** Column names are typically keywords (e.g., `:column-name`).
+- **Column References**: Use keywords (`:city`) or the `#c` reader macro (`#c"city"`).
+- **Vectorized Ops**: Use `==`, `+`, `*`, `&`, `|`, etc. for element-wise operations.
+- **Piping**: Use `->` to chain operations.
+
+#### Example Pipeline
+```lisp
+(use-package :cl-dplyr)
+
+(-> df
+    (filter (== :city "London"))
+    (mutate :double_age (* :age 2))
+    (arrange :age :desc)
+    (summarise :mean_age (mean :double_age)))
+```
+
+### Usage Guide
+
+| R dplyr | cl-dplyr (DSL) | cl-dplyr (Lambda) |
+|---------|----------------|-------------------|
+| `filter(df, x > 5)` | `(filter df (> :x 5))` | `(filter df (lambda (d) (v> (tbl-col d :x) 5)))` |
+| `mutate(df, z = x + y)` | `(mutate df :z (+ :x :y))` | `(mutate df :z (lambda (d) (v+ (tbl-col d :x) (tbl-col d :y))))` |
+| `select(df, x, y)` | `(select df :x :y)` | `(select df :x :y)` (Functional is same) |
+| `arrange(df, desc(x))` | `(arrange df '(:x :desc))` | `(arrange df '(:x :desc))` |
+| `df %>% filter(...)` | `(-> df (filter ...))` | `(-> df (filter ...))` |
+
+### Reader Macros
+For those who prefer explicit column/row annotation:
+
+- **`#c"name"`**: Selects a column (e.g., `#c"age"` is equivalent to `:age` in most contexts, but explicit).
+- **`#r"name"`**: *(Reserved for future row-name support)*.
+
+```lisp
+(filter df (== #c"City" "Paris"))
+```
 
 ## For Common Lisp Users: Why cl-dplyr?
 
-Common Lisp is powerful, but manipulating tabular data (like CSVs or database exports) can often involve a lot of boilerplate `loop` or `map` calls. `cl-dplyr` provides a high-level DSL for these operations, making your code more readable and expressive.
-
-### The "Grammar" Concept
-The core idea is that data manipulation consists of a few basic "verbs". By combining these verbs, you can express complex data pipelines clearly.
+Common Lisp is powerful, but manipulating tabular data can be verbose. `cl-dplyr` abstracts away the loops and vector mapping.
 
 ### Tutorial: Basic Verbs
 
-First, let's create a "tibble" (our data frame structure):
+First, let's create a "tibble":
 
 ```lisp
 (use-package '(#:cl-dplyr #:cl-tibble))
@@ -46,10 +68,10 @@ First, let's create a "tibble" (our data frame structure):
 ```
 
 #### 1. Filter rows
-Keep only people from London:
+Keep only people from London (using vectorized `==`):
 
 ```lisp
-(filter *df* (lambda (d) (vec-p= (tbl-col d :city) "London")))
+(filter *df* (== :city "London"))
 ;; => Returns a tibble with Bob and Charlie
 ```
 
@@ -57,7 +79,7 @@ Keep only people from London:
 Add a "double-age" column:
 
 ```lisp
-(mutate *df* :double-age (lambda (d) (vec-p* (tbl-col d :age) 2)))
+(mutate *df* :double-age (* :age 2))
 ```
 
 #### 3. Arrange (Sort)
@@ -71,19 +93,10 @@ Sort by age descending:
 Calculate the average age:
 
 ```lisp
-(summarise *df* :avg-age (lambda (d) (mean (tbl-col d :age))))
+(summarise *df* :avg-age (mean :age))
 ```
 
-### Pipelines with `->`
-You can chain operations beautifully:
-
-```lisp
-(-> *df*
-    (filter (lambda (d) (vec-p/= (tbl-col d :city) "Tokyo")))
-    (group-by :city)
-    (summarise :mean-age (lambda (d) (mean (tbl-col d :age))))
-    (arrange :mean-age))
-```
+**Note:** Standard CL functions like `mean` (if implemented to handle vectors) work seamlessly. If not, use `cl-vctrs-lite` equivalents or ensure your summary function takes a vector.
 
 ## NA Handling Standards
 
@@ -95,16 +108,10 @@ You can chain operations beautifully:
 ### The `is-missing-p` Function
 Use `(is-missing-p x)` to check for either `*na*` or `nil`.
 
-```lisp
-(is-missing-p cl-vctrs-lite:*na*) ;; => T
-(is-missing-p nil)               ;; => T
-(is-missing-p 42)                ;; => NIL
-```
-
 ### Behavior in Verbs
-- **`filter`**: Rows where the predicate results in `NA` or `NIL` are dropped (matching R's behavior).
-- **`arrange`**: `NA` and `NIL` values are always sorted to the **end** of the tibble, regardless of whether you sort ascending or descending.
-- **`summarise`/`mutate`**: These verbs propagate `NA` values according to the logic of the functions you provide (e.g., using `vec-p+` from `cl-vctrs-lite` will typically propagate `NA`).
+- **`filter`**: Rows where the predicate results in `NA` or `NIL` are dropped.
+- **`arrange`**: `NA` and `NIL` values are always sorted to the **end** of the tibble.
+- **`summarise`/`mutate`**: These verbs propagate `NA` values according to the logic of the functions you provide.
 
 ---
 Built with ❤️ for the Common Lisp Data Science community.

@@ -52,18 +52,43 @@ All functions take a `tibble` as their first argument and return a new `tibble`.
 - **`anti_join(x, y, by)`**
 
 ## 5. DSL / Syntactic Sugar
-The "Sugar" layer will provide macros to make the syntax "more Common Lisp like" while retaining the expressiveness of R's tidyverse.
+The "Sugar" layer provides a high-level DSL that mimics R's Tidyverse notation, reducing the need for explicit lambdas and column accessors.
 
-- **`with-tibble`**: Macro to expose column names as variables within a scope (similar to `with-slots` but for columns).
-- **Threading**: Use `arrow-macros` (or custom `%>`) to pipe data through verbs.
-- **Verb Macros**: `select*`, `filter*`, etc., that allow unquoted symbols.
+### 5.1 Reader Macros
+- **`#c"name"`**: Refers to a column named "name" (case-insensitive, usually keywords).
+- **`#r"name"`**: Refers to a row name.
 
-Example:
+### 5.2 Vectorized Operators
+Special operators are provided that automatically perform vectorized operations on columns and constants:
+- **`==`**: Equal to.
+- **`%=`**: Equal to (keyword-safe).
+- **`!=`, `/=`**: Not equal to.
+- **`>` , `<` , `>=` , `<=`**: Standard comparisons.
+- **`&`, `|`, `!`**: Boolean logic (vectorized).
+
+### 5.3 Verb Macros
+The core verbs (`filter`, `mutate`, `summarise`, etc.) are implemented as macros that detect DSL expressions and expand them into functional calls with appropriate lambdas.
+
+**Example Comparison:**
+- **Functional Style:**
+  ```lisp
+  (filter df (lambda (d) (vec-p= (tbl-col d :city) "London")))
+  ```
+- **DSL Style:**
+  ```lisp
+  (filter df (== #c"city" "London"))
+  ;; or
+  (filter df (== :city "London"))
+  ```
+
+### 5.4 Piping
+Use `->` or `->>` for clean data pipelines.
+
 ```lisp
 (-> df
-  (filter* (> :speed 100))
-  (mutate* :density (/ :mass :volume))
-  (select* :species :density))
+    (filter (== :city "London"))
+    (mutate :new-val (* :x 2))
+    (summarise :mean-val (mean :new-val)))
 ```
 
 ## 6. Implementation roadmap

@@ -1,0 +1,33 @@
+(ql:quickload :cl-dplyr)
+(in-package #:cl-user)
+(defpackage #:dsl-test
+  (:use #:cl #:cl-dplyr #:cl-tibble #:cl-vctrs-lite)
+  (:shadowing-import-from #:cl-dplyr #:slice #:filter #:arrange #:distinct))
+(in-package #:dsl-test)
+
+(defun run-dsl-test ()
+  (let ((df (tibble :name #("Alice" "Bob" "Charlie")
+                    :age #(25 30 35)
+                    :city #("NY" "Lon" "Lon"))))
+    
+    (format t "Original df:~%~a~%" df)
+    
+    (format t "~%Testing filter with DSL (== :city \"Lon\"):~%")
+    (let ((res (filter df (== :city "Lon"))))
+      (format t "~a~%" res))
+    
+    (format t "~%Testing filter with reader macro (== #c\"city\" \"Lon\"):~%")
+    (let ((res (filter df (== #c"city" "Lon"))))
+      (format t "~a~%" res))
+
+    (format t "~%Testing mutate with DSL (* :age 2):~%")
+    (let ((res (mutate df :age2 (* :age 2))))
+      (format t "~a~%" res))
+
+    (format t "~%Testing pipeline -> with DSL:~%")
+    (let ((res (-> df
+                   (filter (== :city "Lon"))
+                   (mutate :age3 (+ :age 10)))))
+      (format t "~a~%" res))))
+
+(run-dsl-test)

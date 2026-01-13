@@ -32,6 +32,16 @@
    ;; DSL
    #:->
    #:->>
+   #:==
+   #:%=
+   #:!=
+   #:>
+   #:<
+   #:>=
+   #:<=
+   #:&
+   #:|\||
+   #:!
    
    ;; NA handling
    #:is-missing-p))
@@ -41,3 +51,19 @@
 (defun is-missing-p (x)
   "Check if X is missing (nil or cl-vctrs-lite:*na*)."
   (or (null x) (cl-vctrs-lite:na-p x)))
+
+;; Reader macros for DSL
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun column-reader (stream char subchar)
+    (declare (ignore char subchar))
+    (let ((name (read stream t nil t)))
+      `(:col ,name)))
+
+  (defun row-reader (stream char subchar)
+    (declare (ignore char subchar))
+    (let ((name (read stream t nil t)))
+      `(:row ,name))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (set-dispatch-macro-character #\# #\c #'column-reader)
+  (set-dispatch-macro-character #\# #\r #'row-reader))

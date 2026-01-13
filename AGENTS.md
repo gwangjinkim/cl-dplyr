@@ -45,10 +45,13 @@
 - [ ] Implement `semi_join`, `anti_join`.
 - [x] **Verify**: Run tests via `make test` and pass.
 
-## Agent 6: DSL & Sugar
-**Goal**: Add the "Lisp" feel.
-- [ ] **Test**: Write tests for macros.
-- [ ] Define macros for core verbs allowing unquoted column references.
-- [ ] Define threading helpers if standard `->` is insufficient.
-- [ ] Ensure clear error messages for DSL usage.
+## Agent 6: DSL & Vectorized Notation
+**Goal**: Implement the high-level DSL.
+- [ ] **Test**: Write tests for DSL expressions in `filter`, `mutate`, etc.
+- [ ] Implement reader macros `#c` and `#r` for explicit column/row naming.
+- [ ] Implement DSL expansion logic:
+    - Recognize unquoted symbols/keywords as column names.
+    - Transform operators like `==`, `+`, etc. into vectorized `cl-vctrs-lite` calls.
+- [ ] Refactor `filter`, `mutate`, `summarise` to be macros that handle both lambdas and DSL expressions.
+- [ ] Update documentation and examples.
 - [x] **Verify**: Run tests via `make test` and pass.

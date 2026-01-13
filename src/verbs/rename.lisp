@@ -1,6 +1,6 @@
 (in-package #:cl-dplyr)
 
-(defmethod rename ((data cl-tibble:tbl) &rest renaming)
+(defmethod %rename ((data cl-tibble:tbl) &rest renaming)
   "Rename columns."
   (let* ((old-names (coerce (cl-tibble:tbl-names data) 'list))
          (new-names (copy-list old-names))
@@ -17,3 +17,6 @@
            (loop for name in new-names
                  for old-name in old-names
                  nconc (list name (cl-tibble:tbl-col data old-name))))))
+
+(defmacro rename (df &rest renaming)
+  `(%rename ,df ,@(mapcar #'unquote-col renaming)))

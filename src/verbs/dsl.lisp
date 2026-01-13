@@ -1,115 +1,122 @@
 (in-package #:cl-dplyr)
 
-(defun make-keyword (name)
-  "Create a keyword from a symbol or string."
-  (values (intern (string-upcase name) :keyword)))
+;; 1. Vectorized Boolean Operators (missing from cl-vctrs-lite)
+(defun v-and (&rest args)
+  (if (null args)
+      #(t)
+      (reduce (lambda (a b) (cl-vctrs-lite:col-map (lambda (x y) (and x y)) a b)) args)))
 
+(defun v-or (&rest args)
+  (if (null args)
+      #(nil)
+      (reduce (lambda (a b) (cl-vctrs-lite:col-map (lambda (x y) (or x y)) a b)) args)))
+
+(defun v-not (a)
+  (cl-vctrs-lite:col-map #'not a))
+
+;; 2. DSL Operator Mapping
+(defparameter *dsl-operators*
+  '((==  . cl-vctrs-lite:v=)
+    (%=  . cl-vctrs-lite:v=)
+    (/=  . cl-vctrs-lite:v=) 
+    (!=  . cl-vctrs-lite:v=) 
+    (>   . cl-vctrs-lite:v>)
+    (<   . cl-vctrs-lite:v<)
+    (>=  . cl-vctrs-lite:v>=)
+    (<=  . cl-vctrs-lite:v<=)
+    (+   . cl-vctrs-lite:v+)
+    (-   . cl-vctrs-lite:v-)
+    (*   . cl-vctrs-lite:v*)
+    (/   . cl-vctrs-lite:v/)
+    (&   . v-and)
+    (|\||  . v-or)
+    (!   . v-not)))
+
+;; 3. DSL Expansion Core
 (defun unquote-col (c)
   "Convert symbol to keyword if not already keyword."
-  (if (symbolp c) (make-keyword c) c))
-
-(defun map-nested (fn tree)
   (cond
-    ((null tree) nil)
-    ((consp tree) (cons (map-nested fn (car tree))
-                        (map-nested fn (cdr tree))))
-    (t (funcall fn tree))))
+    ((keywordp c) c)
+    ((symbolp c) (values (intern (string-upcase c) :keyword)))
+    (t c)))
 
-(defun transform-filter-expr (expr)
-  "Transform (numeric) expressions like (> a 2) to lambda."
-  ;; Naive implementation: assume all symbols found in expr that are not standard CL functions are column lookup
-  ;; Actually, we just need to wrap it: (lambda (d) (map 'vector (lambda (a) (> a 2)) (pull d :a)))
-  ;; This is complex.
-  ;; Simpler approach: (lambda (d) (let ((a (pull d :a))...) ...))
-  ;; But map 'vector is needed for vectorized operations.
-  ;; cl-tibble/dplyr in R is vectorized.
-  ;; If the user writes (> a 2), they expect vector > 2.
-  ;; CL's > works on numbers.
-  ;; We need a vector-map wrapper.
-  `(lambda (df)
-     (let* ,(loop for s in (extract-symbols expr)
-                  collect `(,s (cl-dplyr:pull df ,(make-keyword s))))
-       (map 'vector (lambda ,(extract-symbols expr) ,expr)
-            ,@(extract-symbols expr)))))
+(defun parse-dsl (expr df-sym)
+  (cond
+    ((null expr) nil)
+    ((keywordp expr) `(cl-tibble:tbl-col ,df-sym ,expr))
+    ((symbolp expr) 
+     (let ((pkg (symbol-package expr)))
+       (if (or (null pkg) (eq pkg (find-package :cl-dplyr)))
+           `(cl-tibble:tbl-col ,df-sym ,(unquote-col expr))
+           expr)))
+    ((consp expr)
+     (case (car expr)
+       (:col `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
+       (:row (error "Row access via #r is not supported by cl-tibble."))
+       (t
+        (let ((op (assoc (car expr) *dsl-operators*)))
+          (if op
+              `(,(cdr op) ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
+              (cons (car expr) (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr))))))))
+    (t expr)))
 
-(defun extract-symbols (expr)
-  "Extract free symbols from expression. Very naive."
-  (let ((syms '()))
-    (labels ((scan (e)
-               (cond
-                 ((null e) nil)
-                 ((symbolp e) 
-                  (let ((pkg (symbol-package e)))
-                    (unless (or (keywordp e)
-                                (eq pkg (find-package :common-lisp))
-                                (eq pkg (find-package :cl-dplyr)))
-                      (pushnew e syms))))
-                 ((consp e)
-                  (scan (car e))
-                  (scan (cdr e))))))
-      (scan expr))
-    (nreverse syms)))
-
+;; 4. DSL Verb transformation (for use inside ->)
 (defun expand-dsl-form (form)
-  "Expand DSL-specific macros like select, arrange, filter, mutate in a form."
+  "Expand DSL-specific verbs in a form."
   (if (consp form)
       (case (first form)
-        (select 
-         `(select ,@(mapcar #'make-keyword (rest form))))
-        (arrange
-         `(arrange ,@(loop for arg in (rest form) collect
-                           (if (and (consp arg) 
-                                    (string= (string (first arg)) "DESC"))
-                               `'(,(make-keyword (second arg)) :desc)
-                               (make-keyword arg)))))
-        (filter
-         `(filter ,(transform-filter-expr (second form))))
-        (mutate
-         `(mutate ,@(loop for (col expr) in (rest form)
-                          append `(,(make-keyword col) ,(transform-filter-expr expr)))))
+        (select (cons 'select (mapcar #'unquote-col (rest form))))
+        (arrange (cons 'arrange (loop for arg in (rest form) collect
+                                     (if (and (consp arg) (member (first arg) '(desc :desc)))
+                                         `'(,(unquote-col (second arg)) :desc)
+                                         (unquote-col arg)))))
+        (filter (let ((df-sym (gensym "DF")))
+                  `(filter (lambda (,df-sym) ,(parse-dsl (second form) df-sym)))))
+        (mutate (let ((df-sym (gensym "DF")))
+                  `(mutate ,@(loop for (col expr) on (rest form) by #'cddr
+                                   append `(,(unquote-col col) (lambda (,df-sym) ,(parse-dsl expr df-sym)))))))
+        (summarise (let ((df-sym (gensym "DF")))
+                     `(summarise ,@(loop for (col expr) on (rest form) by #'cddr
+                                         append `(,(unquote-col col) (lambda (,df-sym) ,(parse-dsl expr df-sym)))))))
         (t form))
       form))
 
-(defun placeholder-p (x placeholder)
-  (and (symbolp x)
-       (string= (symbol-name x) (symbol-name placeholder))))
+;; 5. Threading Macros
+(defun placeholder-p (x)
+  (and (symbolp x) (string= (symbol-name x) "_")))
 
-(defun contains-placeholder-p (tree placeholder)
-  "Check if tree contains the placeholder symbol."
+(defun contains-placeholder-p (tree)
   (cond
-    ((placeholder-p tree placeholder) t)
-    ((consp tree) (or (contains-placeholder-p (car tree) placeholder)
-                      (contains-placeholder-p (cdr tree) placeholder)))
+    ((placeholder-p tree) t)
+    ((consp tree) (or (contains-placeholder-p (car tree))
+                      (contains-placeholder-p (cdr tree))))
     (t nil)))
 
-(defun replace-placeholder (tree placeholder value)
-  "Replace occurrences of placeholder with value in tree."
+(defun replace-placeholder (tree value)
   (cond
-    ((placeholder-p tree placeholder) value)
-    ((consp tree) (cons (replace-placeholder (car tree) placeholder value)
-                        (replace-placeholder (cdr tree) placeholder value)))
+    ((placeholder-p tree) value)
+    ((consp tree) (cons (replace-placeholder (car tree) value)
+                        (replace-placeholder (cdr tree) value)))
     (t tree)))
 
 (defmacro -> (x &rest forms)
-  "Thread-first macro with DSL expansion and placeholder support (_)."
-  (let ((forms (mapcar #'expand-dsl-form forms)))
-    (reduce (lambda (val form)
-              (if (and (listp form) (contains-placeholder-p form '_))
-                  (replace-placeholder form '_ val)
-                  (if (listp form)
-                      `(,(first form) ,val ,@(rest form))
-                      `(funcall ,form ,val))))
-            forms
-            :initial-value x)))
+  (reduce (lambda (val form)
+            (let ((expanded (expand-dsl-form form)))
+              (if (contains-placeholder-p expanded)
+                  (replace-placeholder expanded val)
+                  (if (listp expanded)
+                      `(,(first expanded) ,val ,@(rest expanded))
+                      `(,expanded ,val)))))
+          forms
+          :initial-value x))
 
 (defmacro ->> (x &rest forms)
-  "Thread-last macro with DSL expansion and placeholder support (_)."
-  (let ((forms (mapcar #'expand-dsl-form forms)))
-    (reduce (lambda (val form)
-              (if (and (listp form) (contains-placeholder-p form '_))
-                  (replace-placeholder form '_ val)
-                  (if (listp form)
-                      `(,@form ,val)
-                      `(funcall ,form ,val))))
-            forms
-            :initial-value x)))
+  (reduce (lambda (val form)
+            (let ((expanded (expand-dsl-form form)))
+              (if (contains-placeholder-p expanded)
+                  (replace-placeholder expanded val)
+                  (if (listp expanded)
+                      `(,@expanded ,val)
+                      `(,expanded ,val)))))
+          forms
+          :initial-value x))

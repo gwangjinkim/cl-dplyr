@@ -1,6 +1,6 @@
 (in-package #:cl-dplyr)
 
-(defmethod distinct ((data cl-tibble:tbl) &rest variables)
+(defmethod %distinct ((data cl-tibble:tbl) &rest variables)
   "Select distinct/unique rows."
   (let* ((cols (if variables
                    variables
@@ -18,3 +18,6 @@
                  (push i keep-indices))))
     
     (cl-tibble:slice data :rows (nreverse keep-indices))))
+
+(defmacro distinct (df &rest variables)
+  `(%distinct ,df ,@(mapcar #'unquote-col variables)))
