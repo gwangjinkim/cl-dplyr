@@ -14,16 +14,16 @@
   (format t "Class of tibble instance: ~a~%" (class-name (class-of df)))
   (let ((names (cl-tibble:tbl-names df)))
     (format t "tbl-names type: ~a~%" (type-of names))
-    (format t "tbl-names content: ~a~%" names))
-  (format t "Column 'a': ~a~%" (cl-tibble:tbl-col df :a))
-  (format t "Column 'B': ~a~%" (cl-tibble:tbl-col df :B))
-  (format t "Column \"a\": ~a~%" (cl-tibble:tbl-col df "a"))
-  (format t "Column \"B\": ~a~%" (cl-tibble:tbl-col df "B")))
+    (format t "tbl-names content: ~a~%" names)))
+
 
 ;; Inspect SLICE signature
 
 ;; Inspect SLICE signature
 (format t "Arglist of SLICE: ~a~%" (sb-introspect:function-lambda-list #'cl-tibble:slice))
+
+;; Inspect BIND-COLS signature
+(format t "Arglist of BIND-COLS: ~a~%" (sb-introspect:function-lambda-list #'cl-tibble:bind-cols))
 
 ;; Inspect TBL-COL signature
 (format t "Arglist of TBL-COL: ~a~%" (sb-introspect:function-lambda-list #'cl-tibble:tbl-col))

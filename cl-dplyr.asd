@@ -31,5 +31,6 @@
                 ((:file "package")
                  (:file "main" :depends-on ("package"))
                  (:file "agent1" :depends-on ("package" "main"))
-                 (:file "agent2" :depends-on ("package" "main")))))
+                 (:file "agent2" :depends-on ("package" "main"))
+                 (:file "agent3" :depends-on ("package" "main")))))
   :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))

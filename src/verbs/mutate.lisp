@@ -13,5 +13,5 @@
                      (cond
                        ((functionp val) (funcall val result)) 
                        (t val))))
-               (setf result (cl-tibble:bind-cols result col-name new-col-data))))
+               (setf result (cl-tibble:bind-cols result (cl-tibble:tibble col-name new-col-data)))))
     result))
