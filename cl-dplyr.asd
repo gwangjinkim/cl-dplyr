@@ -16,5 +16,7 @@
                   ((:file "slice")
                    (:file "select")
                    (:file "pull")
-                   (:file "rename"))))))
+                   (:file "rename")
+                   (:file "arrange")
+                   (:file "mutate"))))))
   :description "A Grammar of Data Manipulation for Common Lisp")
