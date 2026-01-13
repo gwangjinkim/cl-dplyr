@@ -50,35 +50,66 @@
       (scan expr))
     (nreverse syms)))
 
-(defmacro chain (initial-arg &body forms)
-  "Thread-first macro with DSL expansion."
-  (let ((forms (loop for form in forms collect
-                     (if (consp form)
-                         (case (first form)
-                           (select 
-                            ;; (select a b) -> (select :a :b)
-                            `(select ,@(mapcar #'make-keyword (rest form))))
-                            (arrange
-                             ;; (arrange (desc a)) -> (arrange '(:a :desc)) ? or (:a :desc)
-                             ;; (arrange a) -> (arrange :a)
-                             `(arrange ,@(loop for arg in (rest form) collect
-                                               (if (and (consp arg) 
-                                                        (string= (string (first arg)) "DESC"))
-                                                   `'(,(make-keyword (second arg)) :desc)
-                                                   (make-keyword arg)))))
-                           (filter
-                            ;; (filter (> a 1)) -> (filter (lambda (d) ...))
-                            `(filter ,(transform-filter-expr (second form))))
-                           (mutate
-                            ;; (mutate (c (+ a b)))
-                            `(mutate ,@(loop for (col expr) in (rest form)
-                                             append `(,(make-keyword col) ,(transform-filter-expr expr)))))
-                           (t form))
-                         form))))
-    `(progn
-       (let* ((res ,initial-arg)
-              ,@(loop for form in forms collect
-                      `(res ,(if (consp form)
-                                 `(,(first form) res ,@(rest form))
-                                 `(funcall ,form res)))))
-         res))))
+(defun expand-dsl-form (form)
+  "Expand DSL-specific macros like select, arrange, filter, mutate in a form."
+  (if (consp form)
+      (case (first form)
+        (select 
+         `(select ,@(mapcar #'make-keyword (rest form))))
+        (arrange
+         `(arrange ,@(loop for arg in (rest form) collect
+                           (if (and (consp arg) 
+                                    (string= (string (first arg)) "DESC"))
+                               `'(,(make-keyword (second arg)) :desc)
+                               (make-keyword arg)))))
+        (filter
+         `(filter ,(transform-filter-expr (second form))))
+        (mutate
+         `(mutate ,@(loop for (col expr) in (rest form)
+                          append `(,(make-keyword col) ,(transform-filter-expr expr)))))
+        (t form))
+      form))
+
+(defun placeholder-p (x placeholder)
+  (and (symbolp x)
+       (string= (symbol-name x) (symbol-name placeholder))))
+
+(defun contains-placeholder-p (tree placeholder)
+  "Check if tree contains the placeholder symbol."
+  (cond
+    ((placeholder-p tree placeholder) t)
+    ((consp tree) (or (contains-placeholder-p (car tree) placeholder)
+                      (contains-placeholder-p (cdr tree) placeholder)))
+    (t nil)))
+
+(defun replace-placeholder (tree placeholder value)
+  "Replace occurrences of placeholder with value in tree."
+  (cond
+    ((placeholder-p tree placeholder) value)
+    ((consp tree) (cons (replace-placeholder (car tree) placeholder value)
+                        (replace-placeholder (cdr tree) placeholder value)))
+    (t tree)))
+
+(defmacro -> (x &rest forms)
+  "Thread-first macro with DSL expansion and placeholder support (_)."
+  (let ((forms (mapcar #'expand-dsl-form forms)))
+    (reduce (lambda (val form)
+              (if (and (listp form) (contains-placeholder-p form '_))
+                  (replace-placeholder form '_ val)
+                  (if (listp form)
+                      `(,(first form) ,val ,@(rest form))
+                      `(funcall ,form ,val))))
+            forms
+            :initial-value x)))
+
+(defmacro ->> (x &rest forms)
+  "Thread-last macro with DSL expansion and placeholder support (_)."
+  (let ((forms (mapcar #'expand-dsl-form forms)))
+    (reduce (lambda (val form)
+              (if (and (listp form) (contains-placeholder-p form '_))
+                  (replace-placeholder form '_ val)
+                  (if (listp form)
+                      `(,@form ,val)
+                      `(funcall ,form ,val))))
+            forms
+            :initial-value x)))
