@@ -37,3 +37,12 @@
 
 (defgeneric summarize (data &rest summaries)
   (:documentation "Alias for summarise."))
+
+;;; Joins
+
+(defgeneric inner-join (x y &key by))
+(defgeneric left-join (x y &key by))
+(defgeneric right-join (x y &key by))
+(defgeneric full-join (x y &key by))
+(defgeneric semi-join (x y &key by))
+(defgeneric anti-join (x y &key by))
