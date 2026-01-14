@@ -9,12 +9,20 @@
     
     (loop for (key val) on mutations by #'cddr
           do (let* ((col-name key)
-                    (new-col-data 
-                     (cond
-                       ((functionp val) (funcall val result)) 
-                       (t val))))
-               (when (not (vectorp new-col-data))
-                 (setf new-col-data (make-array (cl-tibble:tbl-nrows result) :initial-element new-col-data)))
+                    (raw-val (cond
+                               ((functionp val) (funcall val result)) 
+                               (t val)))
+                    (new-col-data (if (vectorp raw-val) 
+                                      raw-val
+                                      (make-array (cl-tibble:tbl-nrows result) :initial-element raw-val))))
+               
+               ;; Check if column exists, if so drop it first to allow overwrite
+               (let ((existing-names (coerce (cl-tibble:tbl-names result) 'list)))
+                 (when (member (string-downcase (symbol-name col-name)) existing-names :test #'string-equal)
+                   ;; Reconstruct tibble without this column using %select
+                   (let ((keep-cols (remove (string-downcase (symbol-name col-name)) existing-names :test #'string-equal)))
+                     (setf result (apply #'%select result (mapcar (lambda (s) (intern (string-upcase s) :keyword)) keep-cols))))))
+
                (setf result (cl-tibble:bind-cols result (cl-tibble:tibble col-name new-col-data)))))
     result))
 

@@ -60,10 +60,7 @@
 **Goal**: Implement missing `dplyr` helpers and vectorized logic.
 - [ ] **Test**: Write tests for `if_else`, `case_when`, and vector accessors.
 - [x] **Implemented**: `n`, `n-distinct`, `desc`, `asc`.
-- [ ] Implement Vector Accessors:
-    - `first`, `last`, `nth` (potentially `v-first`, etc.).
-    - `row_number`.
-- [ ] Implement Logic:
-    - `if_else(condition, true, false)`.
-    - `case_when(...)`.
-- [ ] **Verify**: Run tests via `make test` and pass.
+- [x] **Verified**: Run tests via `make test` and pass.
+- [x] **Implemented**: `first`, `last`, `nth`, `row_number`.
+- [x] **Implemented**: `if_else`, `case_when`.
+- [x] **Implemented**: `sum`, `mean`, `min`, `max` (Aggregation).

@@ -107,7 +107,9 @@ Calculate the average age:
     (summarise :count (n)
                :unique-cities (n-distinct :city)
                :first-name (first :name)
-               :last-name (last :name))
+               :last-name (last :name)
+               :total-rev (sum :revenue)
+               :avg-age (mean :age))
     
     ;; Logic
     (mutate :category (case_when

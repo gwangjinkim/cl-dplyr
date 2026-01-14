@@ -96,6 +96,7 @@ Context-aware functions that work within verbs:
 - **`n()`**: Returns row count (context dependent).
 - **`n-distinct(x)`**: Returns count of unique values.
 - **`desc(x)` / `asc(x)`**: Ordering helpers.
+- **`sum(x)`, `mean(x)`, `min(x)`, `max(x)`**: Aggregation helpers (vectorized).
 
 ### 5.6 Future Vector Helpers
 To avoid conflicts with Common Lisp symbols, the following mappings or `v-` prefixed versions are planned:

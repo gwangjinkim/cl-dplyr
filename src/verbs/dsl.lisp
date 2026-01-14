@@ -75,8 +75,16 @@
             ((string-equal (symbol-name head) "CASE_WHEN")
              `(case-when ,@(loop for (cond val) in (cdr expr)
                                  collect `(,(parse-dsl cond df-sym) ,(parse-dsl val df-sym)))))
-            (t 
-             (let ((op (assoc head *dsl-operators*)))
+           ((string-equal (symbol-name head) "SUM")
+            `(sum ,(parse-dsl (second expr) df-sym)))
+           ((string-equal (symbol-name head) "MEAN")
+            `(mean ,(parse-dsl (second expr) df-sym)))
+           ((string-equal (symbol-name head) "MIN")
+            `(min ,(parse-dsl (second expr) df-sym)))
+           ((string-equal (symbol-name head) "MAX")
+            `(max ,(parse-dsl (second expr) df-sym)))
+           (t 
+            (let ((op (assoc head *dsl-operators*)))
                (if op
                    `(,(cdr op) ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
                    (cons head (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))))))))))

@@ -59,3 +59,29 @@
                          expr
                          `(if-else ,cond ,expr ,(expand-clauses (cdr clauses)))))))))
     (expand-clauses clauses)))
+
+;;; Aggregation Helpers
+
+(defun sum (x)
+  "Sum of elements in X. Returns 0 for empty."
+  (if (or (null x) (= (length x) 0))
+      0
+      (reduce #'+ x)))
+
+(defun mean (x)
+  "Mean of elements in X."
+  (if (or (null x) (= (length x) 0))
+      nil ;; Or 0? R returns NA. nil is our NA.
+      (/ (reduce #'+ x) (length x))))
+
+(defun min (x)
+  "Min of elements in X."
+  (if (or (null x) (= (length x) 0))
+      nil
+      (reduce #'cl:min x)))
+
+(defun max (x)
+  "Max of elements in X."
+  (if (or (null x) (= (length x) 0))
+      nil
+      (reduce #'cl:max x)))
