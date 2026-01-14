@@ -52,16 +52,34 @@
            `(cl-tibble:tbl-col ,df-sym ,(unquote-col expr))
            expr)))
     ((consp expr)
-     (case (car expr)
-       (:col `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
-       (:row (error "Row access via #r is not supported by cl-tibble."))
-       (n `(cl-tibble:tbl-nrows ,df-sym))
-       (n-distinct `(length (remove-duplicates ,(parse-dsl (second expr) df-sym) :test #'equalp)))
-       (t
-        (let ((op (assoc (car expr) *dsl-operators*)))
-          (if op
-              `(,(cdr op) ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
-              (cons (car expr) (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr))))))))
+     (let ((head (car expr)))
+       (case head
+         (:col `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
+         (:row (error "Row access via #r is not supported by cl-tibble."))
+         (n `(cl-tibble:tbl-nrows ,df-sym))
+         (n-distinct `(length (remove-duplicates ,(parse-dsl (second expr) df-sym) :test #'equalp)))
+         (t
+          (cond
+            ((string-equal (symbol-name head) "FIRST")
+             `(v-first ,(parse-dsl (second expr) df-sym)))
+            ((string-equal (symbol-name head) "LAST")
+             `(v-last ,(parse-dsl (second expr) df-sym)))
+            ((string-equal (symbol-name head) "NTH")
+             `(v-nth ,(parse-dsl (second expr) df-sym) ,(third expr)))
+            ((string-equal (symbol-name head) "ROW_NUMBER")
+             `(row-number))
+            ((string-equal (symbol-name head) "IF_ELSE")
+             `(if-else ,(parse-dsl (second expr) df-sym) 
+                       ,(parse-dsl (third expr) df-sym)
+                       ,(parse-dsl (fourth expr) df-sym)))
+            ((string-equal (symbol-name head) "CASE_WHEN")
+             `(case-when ,@(loop for (cond val) in (cdr expr)
+                                 collect `(,(parse-dsl cond df-sym) ,(parse-dsl val df-sym)))))
+            (t 
+             (let ((op (assoc head *dsl-operators*)))
+               (if op
+                   `(,(cdr op) ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
+                   (cons head (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))))))))))
     (t expr)))
 
 ;; 4. DSL Verb transformation (for use inside ->)

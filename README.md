@@ -37,7 +37,7 @@ We provide a powerful DSL that allows you to write R-like code directly in Lisp.
 | `filter(df, x > 5)` | `(filter df (> :x 5))` | `(filter df (lambda (d) (v> (tbl-col d :x) 5)))` |
 | `mutate(df, z = x + y)` | `(mutate df :z (+ :x :y))` | `(mutate df :z (lambda (d) (v+ (tbl-col d :x) (tbl-col d :y))))` |
 | `select(df, x, y)` | `(select df :x :y)` | `(select df :x :y)` (Functional is same) |
-| `arrange(df, desc(x))` | `(arrange df '(:x :desc))` | `(arrange df '(:x :desc))` |
+| `arrange(df, desc(x))` | `(arrange df (desc :x))` | `(arrange df '(:x :desc))` |
 | `df %>% filter(...)` | `(-> df (filter ...))` | `(-> df (filter ...))` |
 
 ### Reader Macros
@@ -97,6 +97,31 @@ Calculate the average age:
 ```
 
 **Note:** Standard CL functions like `mean` (if implemented to handle vectors) work seamlessly. If not, use `cl-vctrs-lite` equivalents or ensure your summary function takes a vector.
+
+#### 5. Advanced Helpers (DSL)
+`cl-dplyr` provides rich helpers for common idioms:
+
+```lisp
+(-> *df*
+    ;; Context helpers
+    (summarise :count (n)
+               :unique-cities (n-distinct :city)
+               :first-name (first :name)
+               :last-name (last :name))
+    
+    ;; Logic
+    (mutate :category (case_when
+                        ((> :age 35) "Senior")
+                        ((> :age 28) "Mid")
+                        (t "Junior")))
+                        
+    ;; Ranking and Sorting
+    (arrange (desc :age))
+    (mutate :rank (row_number)))
+```
+
+Note that `first`, `last`, and `nth` are automatically mapped to vectorized versions (`v-first`) inside DSL verbs to avoid conflicts with CL's list functions. `case_when` and `if_else` are fully vectorized.
+
 
 ## NA Handling Standards
 

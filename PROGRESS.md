@@ -59,9 +59,9 @@ This document reflects the journey ("stations") of building `cl-dplyr`, transiti
  - [x] **Context Helpers**: `n` (count), `n-distinct`.
  - [x] **Order Helpers**: `desc`, `asc`.
  - [x] **Arrange Syntax**: Support for `(arrange df (desc :col))`.
- - [ ] **Vector Accessors**: `first`, `last`, `nth` (Lisp-safe versions).
- - [ ] **Ranking**: `row_number`.
- - [ ] **Logic**: `if_else`, `case_when` (vectorized).
+ - [x] **Vector Accessors**: `first`, `last`, `nth` (Lisp-safe versions).
+ - [x] **Ranking**: `row_number`.
+ - [x] **Logic**: `if_else`, `case_when` (vectorized).
 
 ---
 

@@ -49,6 +49,12 @@
    #:n-distinct
    #:desc
    #:asc
+   #:v-first
+   #:v-last
+   #:v-nth
+   #:row-number
+   #:if-else
+   #:case-when
    
    ;; NA handling
    #:is-missing-p))
