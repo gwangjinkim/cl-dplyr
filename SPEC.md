@@ -91,6 +91,19 @@ Use `->` or `->>` for clean data pipelines.
     (summarise :mean-val (mean :new-val)))
 ```
 
+### 5.5 DSL Helpers
+Context-aware functions that work within verbs:
+- **`n()`**: Returns row count (context dependent).
+- **`n-distinct(x)`**: Returns count of unique values.
+- **`desc(x)` / `asc(x)`**: Ordering helpers.
+
+### 5.6 Future Vector Helpers
+To avoid conflicts with Common Lisp symbols, the following mappings or `v-` prefixed versions are planned:
+- **`first`, `last`, `nth`**: Will likely map to `v-first`, `v-last`, `v-nth` or be handled specially in DSL.
+- **`row_number()`**: Returns vector of indices.
+- **`if_else`**, **`case_when`**: Vectorized control flow.
+
+
 ## 6. Implementation roadmap
 1.  **Foundation**: Setup package, `slice`, `select` (wrappers around `cl-tibble`).
 2.  **Transformation**: `mutate` and `transmute` (requires topological sort or sequential evaluation context).

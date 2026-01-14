@@ -35,6 +35,16 @@
 (defmacro arrange (df &rest order-specs)
   `(%arrange ,df 
              ,@(loop for spec in order-specs collect
-                     (if (and (consp spec) (member (first spec) '(desc :desc)))
-                         `'(,(unquote-col (second spec)) :desc)
-                         (unquote-col spec)))))
+                     (cond
+                       ;; Handle (desc col) or (cl-dplyr:desc col)
+                       ((and (consp spec) (symbolp (first spec)) 
+                             (string-equal (symbol-name (first spec)) "DESC"))
+                        `'(,(unquote-col (second spec)) :desc))
+                       ;; Handle (asc col) or (cl-dplyr:asc col)
+                       ((and (consp spec) (symbolp (first spec)) 
+                             (string-equal (symbol-name (first spec)) "ASC"))
+                        `(unquote-col ,(second spec)))
+                       ;; Handle (:col :desc)
+                       ((and (consp spec) (member (first spec) '(desc :desc) :test #'string-equal))
+                        `'(,(unquote-col (second spec)) :desc))
+                       (t (unquote-col spec))))))

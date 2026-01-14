@@ -43,8 +43,10 @@
 (defun parse-dsl (expr df-sym)
   (cond
     ((null expr) nil)
+    ((or (eq expr :n) (eq expr 'n)) `(cl-tibble:tbl-nrows ,df-sym))
+    ((and (consp expr) (eq (first expr) 'n)) `(cl-tibble:tbl-nrows ,df-sym))
     ((keywordp expr) `(cl-tibble:tbl-col ,df-sym ,expr))
-    ((symbolp expr) 
+    ((symbolp expr)
      (let ((pkg (symbol-package expr)))
        (if (or (null pkg) (eq pkg (find-package :cl-dplyr)))
            `(cl-tibble:tbl-col ,df-sym ,(unquote-col expr))
@@ -53,6 +55,8 @@
      (case (car expr)
        (:col `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
        (:row (error "Row access via #r is not supported by cl-tibble."))
+       (n `(cl-tibble:tbl-nrows ,df-sym))
+       (n-distinct `(length (remove-duplicates ,(parse-dsl (second expr) df-sym) :test #'equalp)))
        (t
         (let ((op (assoc (car expr) *dsl-operators*)))
           (if op

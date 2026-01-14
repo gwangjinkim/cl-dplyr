@@ -8,7 +8,7 @@
     ;; Test -> (thread-first) with DSL
     (let ((res (-> df
                  (select a b)
-                 (filter (> a 2)))))
+                 (filter (> :a 2)))))
       (is (= 2 (cl-tibble:tbl-nrows res)))
       (is (equalp (pull res :a) #(3 4))))
 

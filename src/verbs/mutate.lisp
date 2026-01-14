@@ -13,6 +13,8 @@
                      (cond
                        ((functionp val) (funcall val result)) 
                        (t val))))
+               (when (not (vectorp new-col-data))
+                 (setf new-col-data (make-array (cl-tibble:tbl-nrows result) :initial-element new-col-data)))
                (setf result (cl-tibble:bind-cols result (cl-tibble:tibble col-name new-col-data)))))
     result))
 

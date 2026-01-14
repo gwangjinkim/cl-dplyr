@@ -54,6 +54,15 @@ This document reflects the journey ("stations") of building `cl-dplyr`, transiti
     - Parse standard Lisp expressions (e.g., `(> :age 25)`) into efficient lambda functions.
 - [x] **Piping**: Implementation of `->` (thread-first) with DSL expansion support.
 
+ ## Station 8: Advanced Helpers & DSL Refinement
+ **Goal**: Completing the verb vocabulary.
+ - [x] **Context Helpers**: `n` (count), `n-distinct`.
+ - [x] **Order Helpers**: `desc`, `asc`.
+ - [x] **Arrange Syntax**: Support for `(arrange df (desc :col))`.
+ - [ ] **Vector Accessors**: `first`, `last`, `nth` (Lisp-safe versions).
+ - [ ] **Ranking**: `row_number`.
+ - [ ] **Logic**: `if_else`, `case_when` (vectorized).
+
 ---
 
-**Current State**: The library is feature-complete for the core 80% of `dplyr` functionality, explicitly following the "Tidyverse in Lisp" philosophy.
+**Current State**: The library is feature-complete for the core 80% of `dplyr` functionality, explicitly following the "Tidyverse in Lisp" philosophy. DSL now supports `n()` and rich `arrange` syntax.

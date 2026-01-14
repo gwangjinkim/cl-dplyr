@@ -43,6 +43,12 @@
    #:&
    #:|\||
    #:!
+
+   ;; Helpers
+   #:n
+   #:n-distinct
+   #:desc
+   #:asc
    
    ;; NA handling
    #:is-missing-p))
