@@ -1,5 +1,6 @@
 (defpackage #:cl-dplyr
   (:use #:cl #:cl-vctrs-lite)
+  (:nicknames #:dplyr)
   (:import-from #:cl-tibble
                 #:tibble)
   (:export
