@@ -62,6 +62,9 @@ This document reflects the journey ("stations") of building `cl-dplyr`, transiti
  - [x] **Vector Accessors**: `first`, `last`, `nth` (Lisp-safe versions).
  - [x] **Ranking**: `row_number`.
  - [x] **Logic**: `if_else`, `case_when` (vectorized).
+ - [x] **Zero-Conflict DSL**: Natural symbol-based syntax (resolves `min`, `max`, etc. without package conflicts).
+ - [x] **Dot-Prefixes**: Support for `.n`, `.sum`, etc. for unambiguous DSL expressions.
+ - [x] **Mutate Overwrite**: Support for replacing existing columns.
 
 ---
 

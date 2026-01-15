@@ -8,9 +8,16 @@
 - `summarise()` reduces multiple values down to a single summary.
 - `arrange()` changes the ordering of the rows.
 
-## Quick Start
-
 `cl-dplyr` brings the elegance of the Tidyverse to Common Lisp.
+
+### The "Natural" Syntax
+Write R-like code using bare symbols—no quotes or keywords required!
+
+```lisp
+(summarise df total (sum revenue)
+              avg (mean age)
+              count (n))
+```
 
 ### The New DSL Notation
 We provide a powerful DSL that allows you to write R-like code directly in Lisp.
@@ -122,7 +129,7 @@ Calculate the average age:
     (mutate :rank (row_number)))
 ```
 
-Note that `first`, `last`, and `nth` are automatically mapped to vectorized versions (`v-first`) inside DSL verbs to avoid conflicts with CL's list functions. `case_when` and `if_else` are fully vectorized.
+Note that symbols (`min`), keywords (`:min`), and dot-prefixed versions (`.min`) are all supported and work interchangeably. `min`, `max`, and `sum` now resolve correctly within verbs even if you have not shadowed the `COMMON-LISP` versions. `case_when` and `if_else` are fully vectorized.
 
 
 ## NA Handling Standards

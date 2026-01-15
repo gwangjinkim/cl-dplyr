@@ -1,6 +1,5 @@
 (defpackage #:cl-dplyr
   (:use #:cl #:cl-vctrs-lite)
-  (:shadow #:min #:max)
   (:nicknames #:dplyr)
   (:import-from #:cl-tibble
                 #:tibble)
@@ -56,10 +55,14 @@
    #:row-number
    #:if-else
    #:case-when
-   #:sum
-   #:mean
-   #:min
-   #:max
+   
+   ;; Dot-prefixed helpers (for zero-conflict DSL)
+   #:.sum
+   #:.mean
+   #:.min
+   #:.max
+   #:.n
+   #:.count
    
    ;; NA handling
    #:is-missing-p))

@@ -62,25 +62,25 @@
 
 ;;; Aggregation Helpers
 
-(defun sum (x)
+(defun aggregate-sum (x)
   "Sum of elements in X. Returns 0 for empty."
   (if (or (null x) (= (length x) 0))
       0
       (reduce #'+ x)))
 
-(defun mean (x)
+(defun aggregate-mean (x)
   "Mean of elements in X."
   (if (or (null x) (= (length x) 0))
       nil ;; Or 0? R returns NA. nil is our NA.
       (/ (reduce #'+ x) (length x))))
 
-(defun min (x)
+(defun aggregate-min (x)
   "Min of elements in X."
   (if (or (null x) (= (length x) 0))
       nil
       (reduce #'cl:min x)))
 
-(defun max (x)
+(defun aggregate-max (x)
   "Max of elements in X."
   (if (or (null x) (= (length x) 0))
       nil
