@@ -6,7 +6,7 @@
   keys       ;; A list of grouping column names
   )
 
-(defmethod group-by ((data cl-tibble:tbl) &rest variables)
+(defmethod %group-by ((data cl-tibble:tbl) &rest variables)
   "Group tibble by variables."
   (let* ((n (cl-tibble:tbl-nrows data))
          (groups (make-hash-table :test 'equal))
@@ -26,6 +26,9 @@
       (make-grouped-tibble :data data
                            :groups group-list
                            :keys vars))))
+
+(defun .group-by (data &rest variables)
+  (apply #'%group-by data variables))
 
 (defun n-groups (g)
   (length (group-groups g)))

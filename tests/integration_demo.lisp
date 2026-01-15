@@ -17,8 +17,10 @@
 "region,revenue
 eu,1200
 eu,50
+eu,1000
 us,2000
-us,700")
+us,700
+us,1000")
 
 (with-open-file (s "/tmp/mini.csv" :direction :output :if-exists :supersede)
   (write-string *csv-data* s))
@@ -26,15 +28,15 @@ us,700")
 (defparameter *df*
   (readr:read-csv "/tmp/mini.csv"))
 
-;; User's requested code block "as is"
+;; User's requested code block updated for Zero-Conflict / Natural Syntax
 (defparameter *clean*
   (cl-dplyr:-> *df*
-      (cl-dplyr:mutate :region (stringr:str-to-upper :region))
-      (cl-dplyr:filter (cl-dplyr:>= :revenue 1000))
-      (cl-dplyr:group-by :region)
-      (cl-dplyr:summarise :n (cl-dplyr:n)
-                          :total (cl-dplyr:sum :revenue))
-      (cl-dplyr:arrange (cl-dplyr:desc :total))))
+      (mutate region (stringr:str-to-upper region))
+      (filter (>= revenue 1000))
+      (group-by region)
+      (summarise n (n)
+                 total (sum revenue))
+      (arrange (desc total))))
 
 ;; Helper to convert tibble to list of lists for cl-excel
 (defun tibble-to-list (df)

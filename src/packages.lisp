@@ -4,31 +4,27 @@
   (:import-from #:cl-tibble
                 #:tibble)
   (:export
-   ;; Row operations
-   #:slice
-   #:filter
-   #:arrange
-   #:distinct
+   ;; Core Verbs (Dot-prefixed for zero-conflict)
+   #:.slice
+   #:.filter
+   #:.arrange
+   #:.distinct
+   #:.select
+   #:.rename
+   #:.mutate
+   #:.pull
+   #:.group-by
+   #:.ungroup
+   #:.summarise
+   #:.summarize
 
-   ;; Column operations
-   #:select
-   #:rename
-   #:mutate
-   #:pull
-   
-   ;; Grouping
-   #:group-by
-   #:ungroup
-   #:summarise
-   #:summarize
-
-   ;; Joins
-   #:inner-join
-   #:left-join
-   #:right-join
-   #:full-join
-   #:semi-join
-   #:anti-join
+   ;; Joins (Dot-prefixed for zero-conflict)
+   #:.inner-join
+   #:.left-join
+   #:.right-join
+   #:.full-join
+   #:.semi-join
+   #:.anti-join
    
    ;; DSL
    #:->
@@ -44,11 +40,11 @@
    #:|\||
    #:!
 
-   ;; Helpers
-   #:n
-   #:n-distinct
-   #:desc
-   #:asc
+   ;; Helpers (Dot-prefixed for zero-conflict)
+   #:.n
+   #:.n-distinct
+   #:.desc
+   #:.asc
    #:v-first
    #:v-last
    #:v-nth
@@ -56,12 +52,11 @@
    #:if-else
    #:case-when
    
-   ;; Dot-prefixed helpers (for zero-conflict DSL)
+   ;; DSL Internal Names (Matched by string in DSL)
    #:.sum
    #:.mean
    #:.min
    #:.max
-   #:.n
    #:.count
    
    ;; NA handling

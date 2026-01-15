@@ -2,7 +2,7 @@
 
 ;;; Core Generics (Internal Functional Layer)
 
-(defgeneric slice (data &rest args)
+(defgeneric %slice (data &rest args)
   (:documentation "Subset rows using their positions."))
 
 (defgeneric %filter (data predicate)
@@ -23,13 +23,13 @@
 (defgeneric %mutate (data &rest mutations)
   (:documentation "Add or modify columns."))
 
-(defgeneric pull (data var)
+(defgeneric %pull (data var)
   (:documentation "Extract a single column as a vector."))
 
-(defgeneric group-by (data &rest variables)
+(defgeneric %group-by (data &rest variables)
   (:documentation "Group data by one or more variables."))
 
-(defgeneric ungroup (data)
+(defgeneric %ungroup (data)
   (:documentation "Remove grouping metadata."))
 
 (defgeneric %summarise (data &rest summaries)
@@ -37,9 +37,9 @@
 
 ;;; Joins
 
-(defgeneric inner-join (x y &key by))
-(defgeneric left-join (x y &key by))
-(defgeneric right-join (x y &key by))
-(defgeneric full-join (x y &key by))
-(defgeneric semi-join (x y &key by))
-(defgeneric anti-join (x y &key by))
+(defgeneric %inner-join (x y &key by))
+(defgeneric %left-join (x y &key by))
+(defgeneric %right-join (x y &key by))
+(defgeneric %full-join (x y &key by))
+(defgeneric %semi-join (x y &key by))
+(defgeneric %anti-join (x y &key by))

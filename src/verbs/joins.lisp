@@ -60,7 +60,7 @@
     
     (apply #'cl-tibble:tibble (nreverse col-data-list))))
 
-(defmethod inner-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %inner-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   (let* ((y-map (hash-rows y by))
          (keys (ensure-key-list by))
          (x-indices '())
@@ -81,7 +81,7 @@
                          (coerce (nreverse y-indices) 'vector)
                          keys out-cols))))
 
-(defmethod left-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %left-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   (let* ((y-map (hash-rows y by))
          (keys (ensure-key-list by))
          (x-indices '())
@@ -105,7 +105,7 @@
                          (coerce (nreverse y-indices) 'vector)
                          keys out-cols))))
 
-(defmethod right-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %right-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   ;; Symetric to left-join. Swap X and Y, but remember to reorder columns potentially?
   ;; Or just implement directly.
   (let* ((x-map (hash-rows x by))
@@ -131,7 +131,7 @@
                          (coerce (nreverse y-indices) 'vector)
                          keys out-cols))))
 
-(defmethod full-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %full-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   ;; 1. Do left join
   ;; 2. Find rows in Y not matched
   (let* ((y-map (hash-rows y by))
@@ -167,7 +167,7 @@
                          (coerce (nreverse y-indices) 'vector)
                          keys out-cols))))
 
-(defmethod semi-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %semi-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   (let* ((y-map (hash-rows y by))
          (keys (ensure-key-list by))
          (indices '())
@@ -180,7 +180,7 @@
     
     (cl-tibble:slice x :rows (nreverse indices))))
 
-(defmethod anti-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
+(defmethod %anti-join ((x cl-tibble:tbl) (y cl-tibble:tbl) &key by)
   (let* ((y-map (hash-rows y by))
          (keys (ensure-key-list by))
          (indices '())
@@ -192,3 +192,11 @@
                  (push i indices))))
     
     (cl-tibble:slice x :rows (nreverse indices))))
+
+(defun .inner-join (x y &key by) (%inner-join x y :by by))
+(defun .left-join (x y &key by) (%left-join x y :by by))
+(defun .right-join (x y &key by) (%right-join x y :by by))
+(defun .full-join (x y &key by) (%full-join x y :by by))
+(defun .semi-join (x y &key by) (%semi-join x y :by by))
+(defun .anti-join (x y &key by) (%anti-join x y :by by))
+

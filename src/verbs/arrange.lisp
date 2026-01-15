@@ -32,7 +32,7 @@
   (let ((indices (order-by data order-specs)))
     (cl-tibble:slice data :rows indices)))
 
-(defmacro arrange (df &rest order-specs)
+(defmacro .arrange (df &rest order-specs)
   `(%arrange ,df 
              ,@(loop for spec in order-specs collect
                      (cond

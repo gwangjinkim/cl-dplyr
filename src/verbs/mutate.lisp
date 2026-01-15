@@ -26,7 +26,7 @@
                (setf result (cl-tibble:bind-cols result (cl-tibble:tibble col-name new-col-data)))))
     result))
 
-(defmacro mutate (df &rest mutations)
+(defmacro .mutate (df &rest mutations)
   (let ((df-sym (gensym "DF")))
     `(%mutate ,df 
               ,@(loop for (col expr) on mutations by #'cddr

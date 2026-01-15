@@ -45,7 +45,7 @@
                    for i from 0
                    nconc (list name (aref col-vectors i)))))))
 
-(defmacro summarise (df &rest summaries)
+(defmacro .summarise (df &rest summaries)
   (let ((df-sym (gensym "DF")))
     `(%summarise ,df 
                  ,@(loop for (col expr) on summaries by #'cddr
@@ -54,5 +54,5 @@
                                      expr
                                      `(lambda (,df-sym) ,(parse-dsl expr df-sym)))))))
 
-(defmacro summarize (df &rest summaries)
-  `(summarise ,df ,@summaries))
+(defmacro .summarize (df &rest summaries)
+  `(.summarise ,df ,@summaries))

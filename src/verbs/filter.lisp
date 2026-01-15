@@ -11,7 +11,7 @@
                 collect i)))
     (cl-tibble:slice data :rows indices)))
 
-(defmacro filter (df expr)
+(defmacro .filter (df expr)
   (let ((df-sym (gensym "DF")))
     (if (and (consp expr) (eq (first expr) 'lambda))
         `(%filter ,df ,expr)

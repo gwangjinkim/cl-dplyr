@@ -19,5 +19,5 @@
     
     (cl-tibble:slice data :rows (nreverse keep-indices))))
 
-(defmacro distinct (df &rest variables)
+(defmacro .distinct (df &rest variables)
   `(%distinct ,df ,@(mapcar #'unquote-col variables)))

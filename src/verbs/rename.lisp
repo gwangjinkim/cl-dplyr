@@ -18,5 +18,5 @@
                  for old-name in old-names
                  nconc (list name (cl-tibble:tbl-col data old-name))))))
 
-(defmacro rename (df &rest renaming)
+(defmacro .rename (df &rest renaming)
   `(%rename ,df ,@(mapcar #'unquote-col renaming)))

@@ -10,5 +10,5 @@
                  for col in cols
                  nconc (list name col)))))
 
-(defmacro select (df &rest selection)
+(defmacro .select (df &rest selection)
   `(%select ,df ,@(mapcar #'unquote-col selection)))
