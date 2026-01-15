@@ -25,7 +25,7 @@
 
 ;;; Ranking
 
-(defun row-number ()
+(defun aggregate-row-number ()
   "Return a vector of indices from 0 to N-1 for the current context.
    This is intended to be used within mutate/filter where context size is known."
   (error "row-number() must be used within a dplyr verb context."))

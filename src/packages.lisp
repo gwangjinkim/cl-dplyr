@@ -52,7 +52,7 @@
    #:v-first
    #:v-last
    #:v-nth
-   #:row-number
+   #:.row-number
    #:if-else
    #:case-when
    
