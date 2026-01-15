@@ -1,6 +1,6 @@
 (defsystem "cl-dplyr"
   :version "0.1.0"
-  :author "Antigravity"
+  :author "Gwang-Jin Kim <gwang.jin.kim.phd@gmail.com>"
   :license "MIT"
   :depends-on ("cl-tibble"
                "cl-vctrs-lite"
