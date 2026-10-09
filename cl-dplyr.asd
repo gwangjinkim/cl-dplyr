@@ -44,5 +44,6 @@
                  (:file "agent5" :depends-on ("package" "main"))
                  (:file "agent6" :depends-on ("package" "main"))
                  (:file "test-n-desc" :depends-on ("package" "main"))
-                 (:file "test-helpers" :depends-on ("package" "main")))))
+                 (:file "test-helpers" :depends-on ("package" "main"))
+                 (:file "test-dsl-resolution" :depends-on ("package" "main")))))
   :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))

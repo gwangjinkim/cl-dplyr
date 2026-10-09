@@ -1,36 +1,45 @@
 (in-package #:cl-dplyr)
 
-;; 1. Vectorized Boolean Operators (missing from cl-vctrs-lite)
-(defun v-and (&rest args)
-  (if (null args)
-      #(t)
-      (reduce (lambda (a b) (cl-vctrs-lite:col-map (lambda (x y) (and x y)) a b)) args)))
+;; 1. Vectorized Boolean Operators
+;; V-AND, V-OR, V-NOT and V!= come from cl-vctrs-lite (NA-aware Kleene
+;; logic). They used to be defined here with two-argument COL-MAP calls,
+;; which COL-MAP does not accept, so & and | always signalled an error.
 
-(defun v-or (&rest args)
-  (if (null args)
-      #(nil)
-      (reduce (lambda (a b) (cl-vctrs-lite:col-map (lambda (x y) (or x y)) a b)) args)))
-
-(defun v-not (a)
-  (cl-vctrs-lite:col-map #'not a))
-
-;; 2. DSL Operator Mapping
+;; 2. DSL Operator Mapping. Heads are matched by SYMBOL-NAME so the DSL
+;; works from any package, not only from one that uses CL-DPLYR.
 (defparameter *dsl-operators*
-  '((==  . cl-vctrs-lite:v=)
-    (%=  . cl-vctrs-lite:v=)
-    (/=  . cl-vctrs-lite:v=) 
-    (!=  . cl-vctrs-lite:v=) 
-    (>   . cl-vctrs-lite:v>)
-    (<   . cl-vctrs-lite:v<)
-    (>=  . cl-vctrs-lite:v>=)
-    (<=  . cl-vctrs-lite:v<=)
-    (+   . cl-vctrs-lite:v+)
-    (-   . cl-vctrs-lite:v-)
-    (*   . cl-vctrs-lite:v*)
-    (/   . cl-vctrs-lite:v/)
-    (&   . v-and)
-    (|\||  . v-or)
-    (!   . v-not)))
+  '(("=="  . cl-vctrs-lite:v=)
+    ("%="  . cl-vctrs-lite:v=)
+    ("/="  . cl-vctrs-lite:v!=)
+    ("!="  . cl-vctrs-lite:v!=)
+    (">"   . cl-vctrs-lite:v>)
+    ("<"   . cl-vctrs-lite:v<)
+    (">="  . cl-vctrs-lite:v>=)
+    ("<="  . cl-vctrs-lite:v<=)
+    ("+"   . cl-vctrs-lite:v+)
+    ("-"   . cl-vctrs-lite:v-)
+    ("*"   . cl-vctrs-lite:v*)
+    ("/"   . cl-vctrs-lite:v/)
+    ("&"   . cl-vctrs-lite:v-and)
+    ("|"   . cl-vctrs-lite:v-or)
+    ("!"   . cl-vctrs-lite:v-not)))
+
+(defun dsl-operator (head)
+  (and (symbolp head)
+       (cdr (assoc (symbol-name head) *dsl-operators* :test #'string=))))
+
+;; Aggregates: first argument is a column expression, any further
+;; arguments are passed through unchanged.
+(defparameter *dsl-aggregates*
+  '(("SUM" . aggregate-sum) ("MEAN" . aggregate-mean)
+    ("MIN" . aggregate-min) ("MAX" . aggregate-max)))
+
+(defun dsl-name (sym)
+  "Symbol name without a leading dot, with _ read as -."
+  (let ((name (substitute #\- #\_ (symbol-name sym))))
+    (if (and (> (length name) 1) (char= (char name 0) #\.))
+        (subseq name 1)
+        name)))
 
 ;; 3. DSL Expansion Core
 (defun unquote-col (c)
@@ -40,62 +49,73 @@
     ((symbolp c) (values (intern (string-upcase c) :keyword)))
     (t c)))
 
+(defun dsl-plain-symbol-p (sym)
+  "Symbols the DSL leaves alone instead of reading as column names:
+T, NIL and other constants, and *EARMUFFED* special variables."
+  (and (symbolp sym)
+       (not (keywordp sym))
+       (or (constantp sym)
+           (let ((name (symbol-name sym)))
+             (and (> (length name) 2)
+                  (char= (char name 0) #\*)
+                  (char= (char name (1- (length name))) #\*))))))
+
 (defun parse-dsl (expr df-sym)
+  "Rewrite a DSL expression into ordinary Lisp evaluated against DF-SYM.
+Keywords and plain symbols name columns. Left untouched: T, NIL and other
+constants, *specials*, operator heads, and anything inside QUOTE,
+FUNCTION, LAMBDA or (.env ...)."
   (cond
     ((null expr) nil)
     ((or (eq expr :n) (eq expr 'n)) `(cl-tibble:tbl-nrows ,df-sym))
-    ((and (consp expr) (eq (first expr) 'n)) `(cl-tibble:tbl-nrows ,df-sym))
     ((keywordp expr) `(cl-tibble:tbl-col ,df-sym ,expr))
+    ((dsl-plain-symbol-p expr) expr)
     ((symbolp expr)
      `(cl-tibble:tbl-col ,df-sym ,(unquote-col expr)))
     ((consp expr)
      (let ((head (car expr)))
-       (case head
-         (:col `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
-         (:row (error "Row access via #r is not supported by cl-tibble."))
-          (t
-           (let ((name (symbol-name head)))
-             (cond
-               ((or (string-equal name "SUM") (string-equal name ".SUM"))
-                `(aggregate-sum ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "MEAN") (string-equal name ".MEAN"))
-                `(aggregate-mean ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "MIN") (string-equal name ".MIN"))
-                `(aggregate-min ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "MAX") (string-equal name ".MAX"))
-                `(aggregate-max ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "N") (string-equal name ".N") 
-                    (string-equal name "COUNT") (string-equal name ".COUNT"))
-                `(cl-tibble:tbl-nrows ,df-sym))
-               ((or (string-equal name "FIRST") (string-equal name ".FIRST"))
-                `(v-first ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "LAST") (string-equal name ".LAST"))
-                `(v-last ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "NTH") (string-equal name ".NTH"))
-                `(v-nth ,(parse-dsl (second expr) df-sym) ,(third expr)))
-               ((or (string-equal name "ROW_NUMBER") 
-                    (string-equal name "ROW-NUMBER")
-                    (string-equal name ".ROW-NUMBER")
-                    (string-equal name ".ROW_NUMBER"))
-                `(alexandria:iota (cl-tibble:tbl-nrows ,df-sym) :start 1))
-               ((or (string-equal name "IF_ELSE") (string-equal name ".IF_ELSE") (string-equal name ".if-else"))
-                `(if-else ,(parse-dsl (second expr) df-sym) 
-                          ,(parse-dsl (third expr) df-sym)
-                          ,(parse-dsl (fourth expr) df-sym)))
-               ((or (string-equal name "CASE_WHEN") (string-equal name ".CASE_WHEN") (string-equal name ".case-when"))
-                `(case-when ,@(loop for (cond val) in (cdr expr)
-                                    collect `(,(parse-dsl cond df-sym) ,(parse-dsl val df-sym)))))
-               ((or (string-equal name "DESC") (string-equal name ".DESC"))
-                `(.desc ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "ASC") (string-equal name ".ASC"))
-                `(.asc ,(parse-dsl (second expr) df-sym)))
-               ((or (string-equal name "N_DISTINCT") (string-equal name ".N_DISTINCT") (string-equal name "N-DISTINCT") (string-equal name ".N-DISTINCT"))
-                `(.n-distinct ,(parse-dsl (second expr) df-sym)))
-               (t 
-                (let ((op (assoc head *dsl-operators*)))
-                  (if op
-                      `(,(cdr op) ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
-                      (cons head (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr))))))))))))
+       (cond
+         ((eq head :col) `(cl-tibble:tbl-col ,df-sym ,(unquote-col (second expr))))
+         ((eq head :row) (error "Row access via #r is not supported by cl-tibble."))
+         ((member head '(quote function lambda)) expr)
+         ((not (symbolp head))
+          (cons (parse-dsl head df-sym) (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr))))
+         (t
+          (let* ((name (dsl-name head))
+                 (agg (cdr (assoc name *dsl-aggregates* :test #'string=))))
+            (cond
+              ((string= name "ENV") (second expr))
+              (agg `(,agg ,(parse-dsl (second expr) df-sym) ,@(cddr expr)))
+              ((member name '("N" "COUNT") :test #'string=)
+               `(cl-tibble:tbl-nrows ,df-sym))
+              ((member name '("IS-NA" "IS.NA") :test #'string=)
+               `(cl-vctrs-lite:v-na-p ,(parse-dsl (second expr) df-sym)))
+              ((string= name "FIRST")
+               `(v-first ,(parse-dsl (second expr) df-sym)))
+              ((string= name "LAST")
+               `(v-last ,(parse-dsl (second expr) df-sym)))
+              ((string= name "NTH")
+               `(v-nth ,(parse-dsl (second expr) df-sym) ,(third expr)))
+              ((string= name "ROW-NUMBER")
+               `(alexandria:iota (cl-tibble:tbl-nrows ,df-sym) :start 1))
+              ((string= name "IF-ELSE")
+               `(if-else ,(parse-dsl (second expr) df-sym)
+                         ,(parse-dsl (third expr) df-sym)
+                         ,(parse-dsl (fourth expr) df-sym)))
+              ((string= name "CASE-WHEN")
+               `(case-when ,@(loop for (cond val) in (cdr expr)
+                                   collect `(,(parse-dsl cond df-sym) ,(parse-dsl val df-sym)))))
+              ((string= name "DESC")
+               `(.desc ,(parse-dsl (second expr) df-sym)))
+              ((string= name "ASC")
+               `(.asc ,(parse-dsl (second expr) df-sym)))
+              ((string= name "N-DISTINCT")
+               `(.n-distinct ,(parse-dsl (second expr) df-sym)))
+              (t
+               (let ((op (dsl-operator head)))
+                 (if op
+                     `(,op ,@(mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr)))
+                     (cons head (mapcar (lambda (e) (parse-dsl e df-sym)) (rest expr))))))))))))
     (t expr)))
 
 ;; 4. DSL Verb transformation (for use inside ->)
