@@ -58,6 +58,10 @@
    #:.min
    #:.max
    #:.count
+   #:.median
+   #:.var
+   #:.sd
+   #:.quantile
    
    ;; NA handling
    #:is-missing-p))

@@ -61,27 +61,88 @@
     (expand-clauses clauses)))
 
 ;;; Aggregation Helpers
+;;
+;; Semantics follow R: an NA anywhere makes the result NA unless
+;; :NA-RM T is given; logical T/NIL count as 1/0 (so (sum (is-na x))
+;; counts missing values); MEAN, MEDIAN, VAR, SD and QUANTILE return
+;; double-floats; an empty input gives 0 for SUM and NA otherwise.
 
-(defun aggregate-sum (x)
-  "Sum of elements in X. Returns 0 for empty."
-  (if (or (null x) (= (length x) 0))
-      0
-      (reduce #'+ x)))
+(defun %agg-values (x na-rm name)
+  "Return (values numbers na-seen-p) for column X: a list of reals with
+logicals mapped to 1/0. Missing values are dropped when NA-RM, otherwise
+reported via the second value."
+  (let ((vals '()) (na-seen nil))
+    (map nil (lambda (e)
+               (cond ((cl-vctrs-lite:na-p e) (unless na-rm (setf na-seen t)))
+                     ((eq e t) (push 1 vals))
+                     ((null e) (push 0 vals))
+                     ((realp e) (push e vals))
+                     (t (error "~a: non-numeric value ~s" name e))))
+         (if (listp x) x (coerce x 'list)))
+    (values (nreverse vals) na-seen)))
 
-(defun aggregate-mean (x)
-  "Mean of elements in X."
-  (if (or (null x) (= (length x) 0))
-      nil ;; Or 0? R returns NA. nil is our NA.
-      (/ (reduce #'+ x) (length x))))
+(defmacro %with-agg-values ((vals x na-rm name) &body body)
+  (let ((na (gensym "NA")))
+    `(multiple-value-bind (,vals ,na) (%agg-values ,x ,na-rm ,name)
+       (if ,na *na* (progn ,@body)))))
 
-(defun aggregate-min (x)
-  "Min of elements in X."
-  (if (or (null x) (= (length x) 0))
-      nil
-      (reduce #'cl:min x)))
+(defun %as-double (x) (coerce x 'double-float))
 
-(defun aggregate-max (x)
-  "Max of elements in X."
-  (if (or (null x) (= (length x) 0))
-      nil
-      (reduce #'cl:max x)))
+(defun aggregate-sum (x &key na-rm)
+  "Sum of X. Returns 0 for empty."
+  (%with-agg-values (v x na-rm "sum")
+    (reduce #'+ v :initial-value 0)))
+
+(defun aggregate-mean (x &key na-rm)
+  "Arithmetic mean of X as a double-float."
+  (%with-agg-values (v x na-rm "mean")
+    (if v (%as-double (/ (reduce #'+ v) (length v))) *na*)))
+
+(defun aggregate-min (x &key na-rm)
+  "Minimum of X."
+  (%with-agg-values (v x na-rm "min")
+    (if v (reduce #'cl:min v) *na*)))
+
+(defun aggregate-max (x &key na-rm)
+  "Maximum of X."
+  (%with-agg-values (v x na-rm "max")
+    (if v (reduce #'cl:max v) *na*)))
+
+(defun %quantile-sorted (sorted p)
+  "Type-7 quantile (R's default) of a sorted simple-vector of reals."
+  (let* ((n (length sorted))
+         (h (* (1- n) p))
+         (lo (floor h))
+         (hi (min (1+ lo) (1- n))))
+    (%as-double (+ (aref sorted lo)
+                   (* (- h lo) (- (aref sorted hi) (aref sorted lo)))))))
+
+(defun aggregate-quantile (x p &key na-rm)
+  "Quantile of X at probability P (0 <= P <= 1), R type 7."
+  (unless (and (realp p) (<= 0 p 1))
+    (error "quantile: probability must be in [0, 1], got ~s" p))
+  ;; RATIONALIZE recovers the intended decimal from a float literal:
+  ;; 0.1 typed at a default (single-float) REPL is 0.100000001f0, which
+  ;; would shift the result by ~5e-8; (rationalize 0.1f0) is exactly 1/10.
+  (let ((p (if (floatp p) (rationalize p) p)))
+    (%with-agg-values (v x na-rm "quantile")
+      (if v (%quantile-sorted (sort (coerce v 'simple-vector) #'<) p) *na*))))
+
+(defun aggregate-median (x &key na-rm)
+  "Median of X as a double-float."
+  (aggregate-quantile x 1/2 :na-rm na-rm))
+
+(defun aggregate-var (x &key na-rm)
+  "Sample variance (denominator n - 1). NA for fewer than two values."
+  (%with-agg-values (v x na-rm "var")
+    (let ((n (length v)))
+      (if (< n 2)
+          *na*
+          (let* ((m (/ (reduce #'+ v) n))
+                 (ss (reduce #'+ (mapcar (lambda (e) (expt (- e m) 2)) v))))
+            (%as-double (/ ss (1- n))))))))
+
+(defun aggregate-sd (x &key na-rm)
+  "Sample standard deviation."
+  (let ((var (aggregate-var x :na-rm na-rm)))
+    (if (cl-vctrs-lite:na-p var) var (sqrt var))))

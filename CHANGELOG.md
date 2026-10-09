@@ -65,7 +65,21 @@ All notable changes to this project are documented here. Format follows
 - Joins without `:by` join on all common columns (natural join); an error
   is signalled if there are none. `:by` also accepts strings.
 
+- Summary statistics in the DSL: `median`, `var`, `sd` (sample, n-1) and
+  `quantile` (R's default type 7, e.g. `(quantile :y 0.9)`), also exported
+  as `.median`, `.var`, `.sd`, `.quantile` (topic: aggregates).
+- All aggregates accept `:na-rm t`, e.g. `(mean :x :na-rm t)`.
+
+### Changed
+- Aggregates follow R's NA rules: any NA makes `sum`/`mean`/`min`/`max`/...
+  NA unless `:na-rm t` (previously they signalled a type error on NA).
+  Logical T/NIL count as 1/0, so `(sum (is-na :x))` counts missing values.
+- `mean` returns a double-float (was an exact rational such as `305/2`,
+  printed as `<obj>`). Empty input: `sum` → 0, others → NA (was NIL).
+
 ### Tests
 - `join-test`: replaced `(is (handler-case ...))`, which FiveAM cannot
   macroexpand, with `(signals cl-tibble:unknown-column-error ...)`.
 - New `tests/test-joins.lisp` (6 tests). Suite: 95/95 pass.
+- New `tests/test-aggregates.lisp` (6 tests; median/var/sd/quantile values
+  checked against R). Suite: 114/114 pass.

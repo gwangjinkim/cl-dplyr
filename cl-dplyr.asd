@@ -46,5 +46,6 @@
                  (:file "test-n-desc" :depends-on ("package" "main"))
                  (:file "test-helpers" :depends-on ("package" "main"))
                  (:file "test-dsl-resolution" :depends-on ("package" "main"))
-                 (:file "test-joins" :depends-on ("package" "main")))))
+                 (:file "test-joins" :depends-on ("package" "main"))
+                 (:file "test-aggregates" :depends-on ("package" "main")))))
   :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))

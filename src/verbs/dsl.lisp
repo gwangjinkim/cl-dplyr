@@ -29,10 +29,13 @@
        (cdr (assoc (symbol-name head) *dsl-operators* :test #'string=))))
 
 ;; Aggregates: first argument is a column expression, any further
-;; arguments are passed through unchanged.
+;; arguments (e.g. :na-rm t, or a probability for QUANTILE) are passed
+;; through unchanged.
 (defparameter *dsl-aggregates*
   '(("SUM" . aggregate-sum) ("MEAN" . aggregate-mean)
-    ("MIN" . aggregate-min) ("MAX" . aggregate-max)))
+    ("MIN" . aggregate-min) ("MAX" . aggregate-max)
+    ("MEDIAN" . aggregate-median) ("VAR" . aggregate-var)
+    ("SD" . aggregate-sd) ("QUANTILE" . aggregate-quantile)))
 
 (defun dsl-name (sym)
   "Symbol name without a leading dot, with _ read as -."
