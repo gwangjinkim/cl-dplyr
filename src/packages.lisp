@@ -72,17 +72,32 @@
   "Check if X is missing (nil or cl-vctrs-lite:*na*)."
   (or (null x) (cl-vctrs-lite:na-p x)))
 
-;; Reader macros for DSL
+;; Reader macros for DSL: #c"name" (column) and #r"name" (row).
+;;
+;; The Lisp reader treats #c/#C and #r/#R as the same dispatch character,
+;; and both are standard syntax: #C(1 2) is a complex number and #2r1010
+;; is a number in radix 2. These readers therefore delegate the standard
+;; forms to CL's own reader functions, so loading cl-dplyr does not change
+;; how other code is read:
+;;   #c followed by "(" -> standard complex reader
+;;   #r with a numeric argument (#2r...) -> standard radix reader
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun column-reader (stream char subchar)
-    (declare (ignore char subchar))
-    (let ((name (read stream t nil t)))
-      `(:col ,name)))
+  (defparameter *standard-sharp-c*
+    (get-dispatch-macro-character #\# #\c (copy-readtable nil)))
+  (defparameter *standard-sharp-r*
+    (get-dispatch-macro-character #\# #\r (copy-readtable nil)))
 
-  (defun row-reader (stream char subchar)
-    (declare (ignore char subchar))
-    (let ((name (read stream t nil t)))
-      `(:row ,name))))
+  (defun column-reader (stream subchar arg)
+    (if (eql (peek-char nil stream t nil t) #\()
+        (funcall *standard-sharp-c* stream subchar arg)
+        (let ((name (read stream t nil t)))
+          `(:col ,name))))
+
+  (defun row-reader (stream subchar arg)
+    (if arg ; numeric infix argument, e.g. the 2 in #2r1010
+        (funcall *standard-sharp-r* stream subchar arg)
+        (let ((name (read stream t nil t)))
+          `(:row ,name)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (set-dispatch-macro-character #\# #\c #'column-reader)

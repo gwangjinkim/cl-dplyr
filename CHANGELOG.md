@@ -7,6 +7,12 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Fixed
+- **Loading cl-dplyr broke standard Lisp syntax in all later code.** Its
+  global `#c`/`#r` reader macros (for `#c"col"` / `#r"row"`) replaced CL's
+  `#C(1 2)` complex numbers (read as `(:COL (1 2))`) and `#2r1010` radix
+  numbers, because dispatch sub-characters are case-insensitive. The
+  readers now delegate `#C(` and `#<n>r` to CL's standard reader, so both
+  the DSL syntax and standard syntax work (topic: reader macros).
 - **`!=` and `/=` were mapped to equality** in the DSL, so
   `(filter (!= :x 1))` kept exactly the rows where x = 1. They now map to
   `cl-vctrs-lite:v!=` (topic: DSL resolution).
@@ -98,3 +104,4 @@ All notable changes to this project are documented here. Format follows
   checked against R). Suite: 114/114 pass.
 - New `tests/test-mutate.lisp` (3 tests). Suite: 120/120 pass.
 - New `tests/test-grouped.lisp` (5 tests). Suite: 128/128 pass.
+- New `tests/test-reader.lisp` (3 tests). Suite: 134/134 pass.

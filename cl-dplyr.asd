@@ -49,5 +49,6 @@
                  (:file "test-joins" :depends-on ("package" "main"))
                  (:file "test-aggregates" :depends-on ("package" "main"))
                  (:file "test-mutate" :depends-on ("package" "main"))
-                 (:file "test-grouped" :depends-on ("package" "main")))))
+                 (:file "test-grouped" :depends-on ("package" "main"))
+                 (:file "test-reader" :depends-on ("package" "main")))))
   :perform (test-op (op c) (symbol-call :fiveam :run! :cl-dplyr)))
