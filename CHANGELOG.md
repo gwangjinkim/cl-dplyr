@@ -6,17 +6,6 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
-### Tests
-- **The test suite loads and runs again.** It had not compiled since the
-  verbs were renamed with a leading dot (commit 9c62711): the test package
-  `:use`d both FiveAM and cl-dplyr, which both export `!` (package
-  conflict), and every test still called `filter`, `mutate`, `pull`, ...
-  instead of `.filter`, `.mutate`, `.pull`. The test package now
-  shadowing-imports `cl-dplyr:!` and the tests call the dotted verbs.
-  Result: 64/67 checks pass; the 3 failures are genuine bugs (`t` in
-  `case-when`, `.desc` in `arrange`, join columns), fixed in the next
-  commits (topic: test-suite repair).
-
 ### Fixed
 - **`!=` and `/=` were mapped to equality** in the DSL, so
   `(filter (!= :x 1))` kept exactly the rows where x = 1. They now map to
@@ -64,7 +53,6 @@ All notable changes to this project are documented here. Format follows
   `Duplicate column name`. Such columns now get suffixes, `.x`/`.y` by
   default.
 
-### Added
 - Joins: `:suffix` argument for inner/left/right/full joins, e.g.
   `(.left-join a b :by :id :suffix '("_old" "_new"))`.
 - Joins without `:by` join on all common columns (natural join); an error
@@ -92,7 +80,23 @@ All notable changes to this project are documented here. Format follows
 - `mean` returns a double-float (was an exact rational such as `305/2`,
   printed as `<obj>`). Empty input: `sum` → 0, others → NA (was NIL).
 
+- Stopped tracking `build/` (195 files, 4.6M): the ASDF/Roswell compile
+  cache that `make test` writes via `XDG_CACHE_HOME=$(PWD)/build`. It held
+  compiled fasls, including Quicklisp internals and absolute local paths.
+  `build/` is now in `.gitignore`; local files are untouched. Old copies
+  remain in history (topic: repo hygiene).
+
 ### Tests
+- **The test suite loads and runs again.** It had not compiled since the
+  verbs were renamed with a leading dot (commit 9c62711): the test package
+  `:use`d both FiveAM and cl-dplyr, which both export `!` (package
+  conflict), and every test still called `filter`, `mutate`, `pull`, ...
+  instead of `.filter`, `.mutate`, `.pull`. The test package now
+  shadowing-imports `cl-dplyr:!` and the tests call the dotted verbs.
+  Result: 64/67 checks pass; the 3 failures are genuine bugs (`t` in
+  `case-when`, `.desc` in `arrange`, join columns), fixed in the next
+  commits (topic: test-suite repair).
+
 - `join-test`: replaced `(is (handler-case ...))`, which FiveAM cannot
   macroexpand, with `(signals cl-tibble:unknown-column-error ...)`.
 - New `tests/test-joins.lisp` (6 tests). Suite: 95/95 pass.
