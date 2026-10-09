@@ -26,17 +26,10 @@ All notable changes to this project are documented here. Format follows
   name, so the DSL also works from packages that do not `:use` cl-dplyr
   (previously `==` typed in `cl-user` was passed through as an unknown
   function).
-
 - **`(mutate df :label "abc")` treated the string as a character vector**:
   on a 3-row tibble the column became `#\a #\b #\c`, on other sizes it
   errored. Strings are now recycled as scalars (topic: mutate scalars).
 - **`if-else` treated an NA condition as TRUE.** It now yields NA, as in R.
-
-### Added
-- DSL escape `(.env expr)`: evaluate `expr` as ordinary Lisp (like R's
-  `.env$x`), e.g. `(filter df (> :x (.env threshold)))`.
-- `*earmuffed*` special variables are used as variables, not columns.
-- `(is-na col)` / `(is.na col)` in the DSL: vectorised missing test.
 - **`(.arrange df (.desc :y))` failed** with `Invalid column specifier:
   ':Y`. `.desc`/`.asc` returned `('x :desc)`, i.e. the column wrapped in a
   `quote` form, and `.arrange` only recognised `desc`, not the exported
@@ -53,16 +46,19 @@ All notable changes to this project are documented here. Format follows
   `Duplicate column name`. Such columns now get suffixes, `.x`/`.y` by
   default.
 
+### Added
+- DSL escape `(.env expr)`: evaluate `expr` as ordinary Lisp (like R's
+  `.env$x`), e.g. `(filter df (> :x (.env threshold)))`.
+- `*earmuffed*` special variables are used as variables, not columns.
+- `(is-na col)` / `(is.na col)` in the DSL: vectorised missing test.
 - Joins: `:suffix` argument for inner/left/right/full joins, e.g.
   `(.left-join a b :by :id :suffix '("_old" "_new"))`.
 - Joins without `:by` join on all common columns (natural join); an error
   is signalled if there are none. `:by` also accepts strings.
-
 - Summary statistics in the DSL: `median`, `var`, `sd` (sample, n-1) and
   `quantile` (R's default type 7, e.g. `(quantile :y 0.9)`), also exported
   as `.median`, `.var`, `.sd`, `.quantile` (topic: aggregates).
 - All aggregates accept `:na-rm t`, e.g. `(mean :x :na-rm t)`.
-
 - Grouped `mutate` and `filter`: on a `group-by` result, expressions are
   evaluated per group, so `(-> df (group-by g) (mutate c (- x (mean x))))`
   centres within groups and `(filter (> x (mean x)))` compares with the
@@ -79,7 +75,6 @@ All notable changes to this project are documented here. Format follows
   Logical T/NIL count as 1/0, so `(sum (is-na :x))` counts missing values.
 - `mean` returns a double-float (was an exact rational such as `305/2`,
   printed as `<obj>`). Empty input: `sum` → 0, others → NA (was NIL).
-
 - Stopped tracking `build/` (195 files, 4.6M): the ASDF/Roswell compile
   cache that `make test` writes via `XDG_CACHE_HOME=$(PWD)/build`. It held
   compiled fasls, including Quicklisp internals and absolute local paths.
@@ -96,7 +91,6 @@ All notable changes to this project are documented here. Format follows
   Result: 64/67 checks pass; the 3 failures are genuine bugs (`t` in
   `case-when`, `.desc` in `arrange`, join columns), fixed in the next
   commits (topic: test-suite repair).
-
 - `join-test`: replaced `(is (handler-case ...))`, which FiveAM cannot
   macroexpand, with `(signals cl-tibble:unknown-column-error ...)`.
 - New `tests/test-joins.lisp` (6 tests). Suite: 95/95 pass.
