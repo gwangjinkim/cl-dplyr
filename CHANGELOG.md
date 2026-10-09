@@ -75,7 +75,17 @@ All notable changes to this project are documented here. Format follows
   as `.median`, `.var`, `.sd`, `.quantile` (topic: aggregates).
 - All aggregates accept `:na-rm t`, e.g. `(mean :x :na-rm t)`.
 
+- Grouped `mutate` and `filter`: on a `group-by` result, expressions are
+  evaluated per group, so `(-> df (group-by g) (mutate c (- x (mean x))))`
+  centres within groups and `(filter (> x (mean x)))` compares with the
+  group mean. Row order is preserved and the result stays grouped
+  (previously both signalled "no applicable method") (topic: grouping).
+
 ### Changed
+- `group-by` orders groups by their key values (numbers, then strings,
+  then logicals, NA last), so `summarise` output order is defined.
+  Previously it followed hash-table iteration order, which is
+  implementation-dependent.
 - Aggregates follow R's NA rules: any NA makes `sum`/`mean`/`min`/`max`/...
   NA unless `:na-rm t` (previously they signalled a type error on NA).
   Logical T/NIL count as 1/0, so `(sum (is-na :x))` counts missing values.
@@ -89,3 +99,4 @@ All notable changes to this project are documented here. Format follows
 - New `tests/test-aggregates.lisp` (6 tests; median/var/sd/quantile values
   checked against R). Suite: 114/114 pass.
 - New `tests/test-mutate.lisp` (3 tests). Suite: 120/120 pass.
+- New `tests/test-grouped.lisp` (5 tests). Suite: 128/128 pass.
