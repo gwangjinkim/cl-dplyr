@@ -45,8 +45,7 @@
       (is (= 2 (cl-tibble:tbl-nrows res)))
       (is (equalp (.pull res :id) #(1 2)))
       ;; Should NOT have val_y
-      (is (handler-case (progn (.pull res :val_y) nil)
-            (condition () t)))) ;; Assuming pull errors on missing col? Or returns nil?
+      (signals cl-tibble:unknown-column-error (.pull res :val_y)))
       ;; If pull returns nil/error, verify columns explicitly.
       
     ;; Anti Join (keep rows in bd that DO NOT match ad)

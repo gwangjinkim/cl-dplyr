@@ -49,3 +49,23 @@ All notable changes to this project are documented here. Format follows
   `.desc`. Now `.desc`/`.asc` return `(col :desc)`/`(col :asc)`, and
   `.arrange` accepts `desc`/`.desc`/`asc`/`.asc`, `(col :desc)`, and any
   other form evaluating to a spec (topic: arrange).
+- **Join results had reversed column order** (`set-difference` does not
+  preserve order): `left-join` returned `site, note, sex, ..., id`. Output
+  is now keys, then X's other columns, then Y's, each in original order
+  (topic: joins).
+- **Unmatched join cells were the string `"NA"`**, which then broke type
+  inference and arithmetic. They are now `cl-vctrs-lite:*na*`.
+- **Joining tables with a shared non-key column failed** with
+  `Duplicate column name`. Such columns now get suffixes, `.x`/`.y` by
+  default.
+
+### Added
+- Joins: `:suffix` argument for inner/left/right/full joins, e.g.
+  `(.left-join a b :by :id :suffix '("_old" "_new"))`.
+- Joins without `:by` join on all common columns (natural join); an error
+  is signalled if there are none. `:by` also accepts strings.
+
+### Tests
+- `join-test`: replaced `(is (handler-case ...))`, which FiveAM cannot
+  macroexpand, with `(signals cl-tibble:unknown-column-error ...)`.
+- New `tests/test-joins.lisp` (6 tests). Suite: 95/95 pass.

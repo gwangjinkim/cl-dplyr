@@ -37,9 +37,9 @@
 
 ;;; Joins
 
-(defgeneric %inner-join (x y &key by))
-(defgeneric %left-join (x y &key by))
-(defgeneric %right-join (x y &key by))
-(defgeneric %full-join (x y &key by))
+(defgeneric %inner-join (x y &key by suffix))
+(defgeneric %left-join (x y &key by suffix))
+(defgeneric %right-join (x y &key by suffix))
+(defgeneric %full-join (x y &key by suffix))
 (defgeneric %semi-join (x y &key by))
 (defgeneric %anti-join (x y &key by))
