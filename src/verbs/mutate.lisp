@@ -12,7 +12,8 @@
                     (raw-val (cond
                                ((functionp val) (funcall val result)) 
                                (t val)))
-                    (new-col-data (if (vectorp raw-val) 
+                    ;; Strings are vectors in CL but scalars here: recycle them.
+                    (new-col-data (if (and (vectorp raw-val) (not (stringp raw-val)))
                                       raw-val
                                       (make-array (cl-tibble:tbl-nrows result) :initial-element raw-val))))
                

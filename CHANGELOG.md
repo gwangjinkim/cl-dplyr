@@ -38,6 +38,11 @@ All notable changes to this project are documented here. Format follows
   (previously `==` typed in `cl-user` was passed through as an unknown
   function).
 
+- **`(mutate df :label "abc")` treated the string as a character vector**:
+  on a 3-row tibble the column became `#\a #\b #\c`, on other sizes it
+  errored. Strings are now recycled as scalars (topic: mutate scalars).
+- **`if-else` treated an NA condition as TRUE.** It now yields NA, as in R.
+
 ### Added
 - DSL escape `(.env expr)`: evaluate `expr` as ordinary Lisp (like R's
   `.env$x`), e.g. `(filter df (> :x (.env threshold)))`.
@@ -83,3 +88,4 @@ All notable changes to this project are documented here. Format follows
 - New `tests/test-joins.lisp` (6 tests). Suite: 95/95 pass.
 - New `tests/test-aggregates.lisp` (6 tests; median/var/sd/quantile values
   checked against R). Suite: 114/114 pass.
+- New `tests/test-mutate.lisp` (3 tests). Suite: 120/120 pass.

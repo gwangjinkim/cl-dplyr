@@ -34,7 +34,8 @@
 
 (defun if-else (condition true-val false-val)
   "Vectorized if-else.
-   CONDITION should be a vector of booleans (or something treated as boolean).
+   CONDITION should be a vector of booleans (or something treated as boolean);
+   an NA condition gives NA, as in R.
    TRUE-VAL and FALSE-VAL can be vectors or scalars.
    Returns a new vector where each element is chosen based on CONDITION."
   (let* ((n (length condition))
@@ -43,7 +44,9 @@
       (let ((c (aref condition i))
             (t-val (if (vector-not-string-p true-val) (aref true-val i) true-val))
             (f-val (if (vector-not-string-p false-val) (aref false-val i) false-val)))
-        (setf (aref result i) (if c t-val f-val))))
+        (setf (aref result i) (cond ((cl-vctrs-lite:na-p c) *na*)
+                                    (c t-val)
+                                    (t f-val)))))
     result))
 
 (defmacro case-when (&rest clauses)
