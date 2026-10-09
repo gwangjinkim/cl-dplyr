@@ -72,6 +72,9 @@ All notable changes to this project are documented here. Format follows
   (previously both signalled "no applicable method") (topic: grouping).
 
 ### Changed
+- AGENTS.md: "Parity work" section listing this repository's parity
+  milestones (DP1, DP2, DP3, DP4, DP5, DP6, DP7) and where the plan and backlog live
+  (topic: parity plan).
 - Removed emojis from README.md (maintainer preference: no emojis in
   documentation). Meaning is kept in words where an emoji carried it
   (topic: docs style).
