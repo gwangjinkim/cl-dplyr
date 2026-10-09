@@ -72,6 +72,9 @@ All notable changes to this project are documented here. Format follows
   (previously both signalled "no applicable method") (topic: grouping).
 
 ### Changed
+- Removed emojis from README.md (maintainer preference: no emojis in
+  documentation). Meaning is kept in words where an emoji carried it
+  (topic: docs style).
 - `group-by` orders groups by their key values (numbers, then strings,
   then logicals, NA last), so `summarise` output order is defined.
   Previously it followed hash-table iteration order, which is

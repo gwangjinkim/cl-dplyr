@@ -148,4 +148,4 @@ Use `(is-missing-p x)` to check for either `*na*` or `nil`.
 - **`summarise`/`mutate`**: These verbs propagate `NA` values according to the logic of the functions you provide.
 
 ---
-Built with ❤️ for the Common Lisp Data Science community.
+Built for the Common Lisp Data Science community.
