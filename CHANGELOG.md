@@ -43,3 +43,9 @@ All notable changes to this project are documented here. Format follows
   `.env$x`), e.g. `(filter df (> :x (.env threshold)))`.
 - `*earmuffed*` special variables are used as variables, not columns.
 - `(is-na col)` / `(is.na col)` in the DSL: vectorised missing test.
+- **`(.arrange df (.desc :y))` failed** with `Invalid column specifier:
+  ':Y`. `.desc`/`.asc` returned `('x :desc)`, i.e. the column wrapped in a
+  `quote` form, and `.arrange` only recognised `desc`, not the exported
+  `.desc`. Now `.desc`/`.asc` return `(col :desc)`/`(col :asc)`, and
+  `.arrange` accepts `desc`/`.desc`/`asc`/`.asc`, `(col :desc)`, and any
+  other form evaluating to a spec (topic: arrange).

@@ -33,18 +33,24 @@
     (cl-tibble:slice data :rows indices)))
 
 (defmacro .arrange (df &rest order-specs)
-  `(%arrange ,df 
+  "Order rows. Each spec is a column, (desc col), (asc col), (col :desc), or
+any other form evaluating to such a spec (e.g. '(:a :desc)).
+DESC/ASC may be written with or without the leading dot."
+  `(%arrange ,df
              ,@(loop for spec in order-specs collect
                      (cond
-                       ;; Handle (desc col) or (cl-dplyr:desc col)
-                       ((and (consp spec) (symbolp (first spec)) 
-                             (string-equal (symbol-name (first spec)) "DESC"))
+                       ;; (desc col), (.desc col), (cl-dplyr:.desc col)
+                       ((and (consp spec) (symbolp (first spec))
+                             (string= (dsl-name (first spec)) "DESC"))
                         `'(,(unquote-col (second spec)) :desc))
-                       ;; Handle (asc col) or (cl-dplyr:asc col)
-                       ((and (consp spec) (symbolp (first spec)) 
-                             (string-equal (symbol-name (first spec)) "ASC"))
-                        `(unquote-col ,(second spec)))
-                       ;; Handle (:col :desc)
-                       ((and (consp spec) (member (first spec) '(desc :desc) :test #'string-equal))
-                        `'(,(unquote-col (second spec)) :desc))
-                       (t (unquote-col spec))))))
+                       ;; (asc col), (.asc col)
+                       ((and (consp spec) (symbolp (first spec))
+                             (string= (dsl-name (first spec)) "ASC"))
+                        `',(unquote-col (second spec)))
+                       ;; (col :desc) / (col :asc)
+                       ((and (consp spec) (member (second spec) '(:desc :asc)))
+                        `'(,(unquote-col (first spec)) ,(second spec)))
+                       ;; any other form, e.g. '(:a :desc) or a variable
+                       ;; holding a spec, is evaluated at run time
+                       ((consp spec) spec)
+                       (t `',(unquote-col spec))))))

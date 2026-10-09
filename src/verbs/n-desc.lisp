@@ -11,10 +11,10 @@
 
 (defun .desc (x)
   "Helper to specify descending order for arrange.
-   Returns a specifier that arrange understands."
-  `(',x :desc))
+   Returns a specifier that arrange understands: (column :desc)."
+  (list x :desc))
 
 (defun .asc (x)
   "Helper to specify ascending order for arrange.
-   Returns x as is, or a specifier."
-  `(',x :asc))
+   Returns a specifier that arrange understands: (column :asc)."
+  (list x :asc))
